@@ -1,7 +1,9 @@
 package com.autosavecoach.backend.dto;
 
 import com.autosavecoach.backend.model.Category;
+import lombok.Getter;
 
+@Getter
 public class BudgetComparisonResponse {
 
     private Category category;
@@ -27,28 +29,5 @@ public class BudgetComparisonResponse {
         this.status = status;
     }
 
-    public Category getCategory() {
-        return category;
-    }
-
-    public double getBudget() {
-        return budget;
-    }
-
-    public double getSpent() {
-        return spent;
-    }
-
-    public double getRemaining() {
-        return remaining;
-    }
-
-    public double getPercentageUsed() {
-        return percentageUsed;
-    }
-
-    public String getStatus() {
-        return status;
-    }
 }
 

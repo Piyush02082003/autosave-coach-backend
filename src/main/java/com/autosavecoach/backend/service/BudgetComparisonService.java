@@ -64,13 +64,11 @@ public class BudgetComparisonService {
             String status;
             if (percentageUsed < 80) {
                 status = "ON_TRACK";
-            } else if (percentageUsed < 100) {
+            } else if (percentageUsed <= 100) {
                 status = "WARNING";
             } else {
                 status = "EXCEEDED";
             }
-
-            System.out.println(status);
 
             response.add(
                     new BudgetComparisonResponse(
