@@ -77,6 +77,7 @@ public class BudgetComparisonService {
 
             response.add(
                     new BudgetComparisonResponse(
+                            budgetMonth,
                             category,
                             budgetAmount,
                             spent,

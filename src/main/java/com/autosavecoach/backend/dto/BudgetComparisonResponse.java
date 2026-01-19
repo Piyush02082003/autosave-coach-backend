@@ -3,9 +3,12 @@ package com.autosavecoach.backend.dto;
 import com.autosavecoach.backend.model.Category;
 import lombok.Getter;
 
+import java.time.YearMonth;
+
 @Getter
 public class BudgetComparisonResponse {
 
+    private YearMonth month;
     private Category category;
     private double budget;
     private double spent;
@@ -14,6 +17,7 @@ public class BudgetComparisonResponse {
     private String status;
 
     public BudgetComparisonResponse(
+            YearMonth month,
             Category category,
             double budget,
             double spent,
@@ -21,6 +25,7 @@ public class BudgetComparisonResponse {
             double percentageUsed,
             String status
     ) {
+        this.month = month;
         this.category = category;
         this.budget = budget;
         this.spent = spent;
