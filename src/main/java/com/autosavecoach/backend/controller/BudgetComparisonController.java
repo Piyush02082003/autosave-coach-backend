@@ -20,9 +20,31 @@ public class BudgetComparisonController {
     @GetMapping("/compare")
     public List<BudgetComparisonResponse> compareBudgets(
             @RequestParam Long userId,
-            @RequestParam String month
+            @RequestParam(required = false) String month,
+            @RequestParam(required = false) String startMonth,
+            @RequestParam(required = false) String endMonth,
+            @RequestParam(required = false) String category
     ) {
-        YearMonth yearMonth = YearMonth.parse(month);
-        return comparisonService.compareBudgets(userId, yearMonth);
+        YearMonth start;
+        YearMonth end;
+
+        if (month != null) {
+            start = YearMonth.parse(month);
+            end = start;
+        } else if (startMonth != null && endMonth != null) {
+            start = YearMonth.parse(startMonth);
+            end = YearMonth.parse(endMonth);
+        } else {
+            throw new IllegalArgumentException(
+                    "Either 'month' OR 'startMonth' and 'endMonth' must be provided"
+            );
+        }
+
+        return comparisonService.compareBudgets(
+                userId,
+                start,
+                end,
+                category
+        );
     }
 }

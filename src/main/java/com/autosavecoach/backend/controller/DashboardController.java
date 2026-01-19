@@ -14,18 +14,18 @@ import java.time.YearMonth;
 @RequestMapping("/api/dashboard")
 public class DashboardController {
 
-    private final DashboardService dashboardService;
-
-    public DashboardController(DashboardService dashboardService) {
-        this.dashboardService = dashboardService;
-    }
-
-    @GetMapping
-    public DashboardResponse getMonthlyDashboard(
-            @RequestParam Long userId,
-            @RequestParam String month
-    ) {
-        YearMonth yearMonth = MonthUtil.parse(month);
-        return dashboardService.getDashboard(userId, yearMonth);
-    }
+//    private final DashboardService dashboardService;
+//
+//    public DashboardController(DashboardService dashboardService) {
+//        this.dashboardService = dashboardService;
+//    }
+//
+//    @GetMapping
+//    public DashboardResponse getMonthlyDashboard(
+//            @RequestParam Long userId,
+//            @RequestParam String month
+//    ) {
+//        YearMonth yearMonth = MonthUtil.parse(month);
+//        return dashboardService.getDashboard(userId, yearMonth);
+//    }
 }

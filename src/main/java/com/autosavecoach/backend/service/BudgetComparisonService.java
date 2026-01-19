@@ -26,25 +26,36 @@ public class BudgetComparisonService {
         this.expenseRepository = expenseRepository;
     }
 
-    public List<BudgetComparisonResponse> compareBudgets(Long userId, YearMonth month) {
-
+    public List<BudgetComparisonResponse> compareBudgets(
+            Long userId,
+            YearMonth startMonth,
+            YearMonth endMonth,
+            String categoryFilter
+    ) {
         // Fetch all budgets
         List<Budget> budgets = budgetRepository.findAll();
-
         List<BudgetComparisonResponse> response = new ArrayList<>();
 
         for (Budget budget : budgets) {
 
-            // Skip other users / months
-            if (!budget.getUser().getId().equals(userId)
-                    || !budget.getMonth().equals(month)) {
+            // Skip other users
+            if (!budget.getUser().getId().equals(userId)) continue;
+
+            // Skip other months
+            YearMonth budgetMonth = budget.getMonth();
+            if (budgetMonth.isBefore(startMonth) || budgetMonth.isAfter(endMonth)) {
                 continue;
             }
 
+            // Skip other category
             Category category = budget.getCategory();
+            if (categoryFilter != null &&
+                    !category.name().equalsIgnoreCase(categoryFilter)) {
+                continue;
+            }
 
-            LocalDate startDate = month.atDay(1);
-            LocalDate endDate = month.atEndOfMonth();
+            LocalDate startDate = budgetMonth.atDay(1);
+            LocalDate endDate = budgetMonth.atEndOfMonth();
 
             double spent = expenseRepository
                     .findByUserIdAndCategoryAndDateBetween(
@@ -54,21 +65,15 @@ public class BudgetComparisonService {
                             endDate
                     )
                     .stream()
-                    .mapToDouble(expense -> expense.getAmount())
+                    .mapToDouble(e -> e.getAmount())
                     .sum();
 
             double budgetAmount = budget.getAmount();
             double remaining = budgetAmount - spent;
-            double percentageUsed = (spent / budgetAmount) * 100;
 
-            String status;
-            if (percentageUsed < 80) {
-                status = "ON_TRACK";
-            } else if (percentageUsed <= 100) {
-                status = "WARNING";
-            } else {
-                status = "EXCEEDED";
-            }
+            double percentageUsed = budgetAmount == 0 ? 0 : (spent / budgetAmount) * 100;
+
+            String status = determineStatus(spent, percentageUsed);
 
             response.add(
                     new BudgetComparisonResponse(
@@ -81,8 +86,16 @@ public class BudgetComparisonService {
                     )
             );
         }
-
         return response;
+    }
+
+    private String determineStatus(double spent, double percentageUsed) {
+
+        if (spent == 0) return "NOT_STARTED";
+        if (percentageUsed < 80) return "ON_TRACK";
+        if (percentageUsed < 100) return "WARNING";
+        if (percentageUsed == 100) return "LIMIT_REACHED";
+        return "EXCEEDED";
     }
 }
 
