@@ -27,22 +27,22 @@ public class ExpenseController {
         return expenseService.saveExpense(request);
     }
 
-    @GetMapping("/user/{userId}")
+    @GetMapping("/{userId}")
     public List<ExpenseResponse> getUserExpenses(@PathVariable Long userId){
         return expenseService.getExpensesByUser(userId);
     }
 
-    @GetMapping("/user/{userId}/total")
+    @GetMapping("/{userId}/total")
     public Double getTotalSpent(@PathVariable Long userId) {
         return expenseService.getTotalSpentByUser(userId);
     }
 
-    @GetMapping("/user/{userId}/monthly")
+    @GetMapping("/{userId}/monthly")
     public Map<YearMonth, Double> getMonthlySpend(@PathVariable Long userId) {
         return expenseService.getMonthlySpend(userId);
     }
 
-    @GetMapping("/user/{userId}/category")
+    @GetMapping("/{userId}/category")
     public Map<Category, Double> getCategoryWiseSpend(@PathVariable Long userId) {
         return expenseService.getCategoryWiseSpend(userId);
     }
