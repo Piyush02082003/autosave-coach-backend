@@ -1,7 +1,9 @@
 package com.autosavecoach.backend.service;
 
+import com.autosavecoach.backend.dto.LoginRequest;
 import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.exception.ConflictException;
+import com.autosavecoach.backend.exception.UnauthorizedException;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +19,7 @@ public class UserService{
         this.passwordEncoder = passwordEncoder;
     }
 
+    //  User Sign up
     public User createUser(User user){
 
         if (user.getEmail() == null || user.getEmail().isBlank()) {
@@ -45,5 +48,28 @@ public class UserService{
 
         // Save user
         return userRepository.save(user);
+    }
+
+
+    // User Login
+    public User login(LoginRequest request){
+        if(request.getEmail() == null || request.getEmail().isBlank()){
+            throw new BadRequestException("Email is required");
+        }
+
+        if(request.getPassword() == null || request.getPassword().isBlank()){
+            throw new BadRequestException("Password is required");
+        }
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                    new UnauthorizedException("Invalid email or password")
+                );
+
+        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
+            throw new UnauthorizedException("Invalid email or password");
+        }
+
+        return user;
     }
 }
