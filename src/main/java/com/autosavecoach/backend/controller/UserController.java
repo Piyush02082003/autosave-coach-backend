@@ -1,6 +1,7 @@
 package com.autosavecoach.backend.controller;
 
 import com.autosavecoach.backend.dto.LoginRequest;
+import com.autosavecoach.backend.dto.LoginResponse;
 import com.autosavecoach.backend.dto.UserResponse;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.service.UserService;
@@ -34,13 +35,15 @@ public class UserController {
 
     // LOGIN
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request){
+    public ResponseEntity<LoginResponse > login(@RequestBody LoginRequest request){
         User user = userService.login(request);
+        String token = userService.generateTokenForUser(user);
 
-        UserResponse response = new UserResponse(
+        LoginResponse response = new LoginResponse(
                 user.getId(),
                 user.getName(),
-                user.getEmail()
+                user.getEmail(),
+                token
         );
 
         return ResponseEntity.ok(response);

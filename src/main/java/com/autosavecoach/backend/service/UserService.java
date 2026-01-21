@@ -13,10 +13,12 @@ import org.springframework.stereotype.Service;
 public class UserService{
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder){
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     //  User Sign up
@@ -71,5 +73,9 @@ public class UserService{
         }
 
         return user;
+    }
+
+    public String generateTokenForUser(User user) {
+        return jwtService.generateToken(user.getEmail());
     }
 }
