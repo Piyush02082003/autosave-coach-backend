@@ -24,9 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
 
@@ -38,35 +36,45 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 2️⃣ Extract token
-        String token = authHeader.substring(7);
-        // 3️⃣ Extract email from token
-        String email = jwtService.extractEmail(token);
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtService.extractEmail(token);
 
-        // 4️⃣ Authenticate only if not already authenticated
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtService.isTokenValid(token, email)) {
 
-            // 5️⃣ Validate token
-            if (jwtService.isTokenValid(token, email)) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    Collections.emptyList()
+                            );
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                email,          // principal
-                                null,           // credentials
-                                Collections.emptyList() // authorities (for now)
-                        );
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-
-                // 6️⃣ Mark user as authenticated
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
-        }
 
-        // 7️⃣ Continue request
-        filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
+
+        } catch (Exception ex) {
+            // 🔥 JWT invalid / malformed / expired
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            String timestamp = java.time.OffsetDateTime.now().toString();
+
+            response.getWriter().write("""
+                        {
+                          "status": 401,
+                          "error": "UNAUTHORIZED",
+                          "message": "Invalid or expired token",
+                          "timestamp": "%s"
+                        }
+                    """.formatted(timestamp));
+        }
     }
 }
 

@@ -49,7 +49,7 @@ public class JwtService {
     // Generic claim extractor
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver){
         final Claims claims = Jwts.parser()
-                .setSigningKey(SECRET_KEY)
+                .setSigningKey(getSigningKey())
                 .parseClaimsJws(token)
                 .getBody();
 
