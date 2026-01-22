@@ -3,10 +3,13 @@ package com.autosavecoach.backend.controller;
 import com.autosavecoach.backend.dto.LoginRequest;
 import com.autosavecoach.backend.dto.LoginResponse;
 import com.autosavecoach.backend.dto.UserResponse;
+import com.autosavecoach.backend.exception.UnauthorizedException;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,6 +34,30 @@ public class UserController {
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // Get User Profile
+    @GetMapping
+    public ResponseEntity<UserResponse> getCurrentUser() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UnauthorizedException("Unauthorized");
+        }
+
+        String email = authentication.getName(); // set by JwtAuthFilter
+
+        User user = userService.getUserByEmail(email);
+
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail()
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     // LOGIN

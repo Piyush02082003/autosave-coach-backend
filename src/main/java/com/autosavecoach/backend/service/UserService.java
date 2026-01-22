@@ -78,4 +78,10 @@ public class UserService{
     public String generateTokenForUser(User user) {
         return jwtService.generateToken(user.getEmail());
     }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new UnauthorizedException("User not found"));
+    }
 }
