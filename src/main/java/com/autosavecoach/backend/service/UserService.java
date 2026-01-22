@@ -3,6 +3,7 @@ package com.autosavecoach.backend.service;
 import com.autosavecoach.backend.dto.LoginRequest;
 import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.exception.ConflictException;
+import com.autosavecoach.backend.exception.NotFoundException;
 import com.autosavecoach.backend.exception.UnauthorizedException;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.repository.UserRepository;
@@ -82,6 +83,6 @@ public class UserService{
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new UnauthorizedException("User not found"));
+                        new NotFoundException("User not found"));
     }
 }
