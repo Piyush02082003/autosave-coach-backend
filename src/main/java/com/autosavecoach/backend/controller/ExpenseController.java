@@ -10,6 +10,7 @@ import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.model.Expense;
 import com.autosavecoach.backend.service.ExpenseService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,28 +23,38 @@ public class ExpenseController {
         this.expenseService = expenseService;
     }
 
+    // Add Expense
     @PostMapping
     public ExpenseResponse addExpense(@Valid @RequestBody ExpenseRequest request) {
-        return expenseService.saveExpense(request);
+        System.out.println("hello");
+        System.out.println("AUTH = " + SecurityContextHolder.getContext().getAuthentication());
+        return expenseService.addExpense(request);
     }
 
-    @GetMapping("/{userId}")
-    public List<ExpenseResponse> getUserExpenses(@PathVariable Long userId){
-        return expenseService.getExpensesByUser(userId);
+    // Get Expense of logged-in user
+    @GetMapping
+    public List<ExpenseResponse> getMyExpenses(){
+        return expenseService.getMyExpenses();
     }
 
-    @GetMapping("/{userId}/total")
-    public Double getTotalSpent(@PathVariable Long userId) {
-        return expenseService.getTotalSpentByUser(userId);
+    // Get single expense by id
+    @GetMapping("/{expenseId}")
+    public ExpenseResponse getExpenseById(@PathVariable Long expenseId) {
+        return expenseService.getExpenseById(expenseId);
     }
 
-    @GetMapping("/{userId}/monthly")
-    public Map<YearMonth, Double> getMonthlySpend(@PathVariable Long userId) {
-        return expenseService.getMonthlySpend(userId);
+    @GetMapping("/total")
+    public Double getTotalSpent() {
+        return expenseService.getTotalSpent();
     }
 
-    @GetMapping("/{userId}/category")
-    public Map<Category, Double> getCategoryWiseSpend(@PathVariable Long userId) {
-        return expenseService.getCategoryWiseSpend(userId);
+    @GetMapping("/monthly")
+    public Map<YearMonth, Double> getMonthlySpend() {
+        return expenseService.getMonthlySpend();
+    }
+
+    @GetMapping("/category")
+    public Map<Category, Double> getCategoryWiseSpend() {
+        return expenseService.getCategoryWiseSpend();
     }
 }

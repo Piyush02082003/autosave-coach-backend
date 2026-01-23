@@ -1,7 +1,9 @@
 package com.autosavecoach.backend.dto;
 
+import lombok.Getter;
 import java.time.LocalDate;
 
+@Getter
 public class ExpenseResponse {
 
     private Long id;
@@ -18,10 +20,5 @@ public class ExpenseResponse {
         this.date = date;
     }
 
-    public Long getId() { return id; }
-    public String getTitle() { return title; }
-    public String getCategory() { return category; }
-    public Double getAmount() { return amount; }
-    public LocalDate getDate() { return date; }
 }
 

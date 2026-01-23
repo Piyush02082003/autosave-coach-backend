@@ -38,23 +38,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             String token = authHeader.substring(7);
+            System.out.println(token);
             String email = jwtService.extractEmail(token);
-
+            System.out.println(email);
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                System.out.println("email is not null and authentication is not null");
                 if (jwtService.isTokenValid(token, email)) {
-
+                    System.out.println("token is validated");
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     email,
                                     null,
                                     Collections.emptyList()
                             );
-
+                    System.out.println(authentication);
                     authentication.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request)
                     );
-
+                    System.out.println(authentication);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    System.out.println("check " + SecurityContextHolder.getContext().getAuthentication());
                 }
             }
 
@@ -62,8 +65,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         } catch (Exception ex) {
             // 🔥 JWT invalid / malformed / expired
+            System.out.println("inside catch block");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
+
             String timestamp = java.time.OffsetDateTime.now().toString();
 
             response.getWriter().write("""
@@ -74,6 +79,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                           "timestamp": "%s"
                         }
                     """.formatted(timestamp));
+
+            return;
         }
     }
 }

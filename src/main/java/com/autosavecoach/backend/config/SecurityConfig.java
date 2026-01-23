@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -15,7 +16,9 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(
+            JwtAuthFilter jwtAuthFilter
+    ) {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
@@ -23,10 +26,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // 1️⃣ Disable CSRF (JWT is stateless)
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
 
-                // 2️⃣ Allow H2 console to render in browser
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
 
                 // 3️⃣ Authorization rules
@@ -39,15 +40,14 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // 4️⃣ Add JWT filter BEFORE Spring's auth filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // 5️⃣ Keep basic auth disabled logically (JWT handles auth)
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
 
+    // Password hashing before storing in DB
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

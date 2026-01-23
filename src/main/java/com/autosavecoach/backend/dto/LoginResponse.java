@@ -1,6 +1,8 @@
 package com.autosavecoach.backend.dto;
 
+import lombok.Getter;
 
+@Getter
 public class LoginResponse {
 
     private final Long id;
@@ -15,8 +17,4 @@ public class LoginResponse {
         this.token = token;
     }
 
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
-    public String getToken() { return token; }
 }
