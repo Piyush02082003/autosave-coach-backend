@@ -23,10 +23,8 @@ public class GlobalExceptionHandler {
 
         String message = ex.getBindingResult()
                 .getFieldErrors()
-                .stream()
-                .findFirst()
-                .map(error -> error.getField() + " " + error.getDefaultMessage())
-                .orElse("Validation failed");
+                .get(0)
+                .getDefaultMessage();
 
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
