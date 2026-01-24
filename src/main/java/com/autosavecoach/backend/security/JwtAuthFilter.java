@@ -36,55 +36,33 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-//        try {
-            String token = authHeader.substring(7);
-            System.out.println(token);
-            String email = jwtService.extractEmail(token);
-            System.out.println(email);
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                System.out.println("email is not null and authentication is not null");
-                if (!jwtService.isTokenValid(token, email)) {
-                    throw new RuntimeException("Invalid JWT");
-                }
-
-                    System.out.println("token is validated");
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    email,
-                                    null,
-                                    Collections.emptyList()
-                            );
-                    System.out.println(authentication);
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
-                    System.out.println(authentication);
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    System.out.println("check " + SecurityContextHolder.getContext().getAuthentication());
-
+        String token = authHeader.substring(7);
+//        System.out.println(token);
+        String email = jwtService.extractEmail(token);
+//        System.out.println(email);
+        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+//            System.out.println("email is not null and authentication is not null");
+            if (!jwtService.isTokenValid(token, email)) {
+                throw new RuntimeException("Invalid JWT");
             }
 
-            filterChain.doFilter(request, response);
+//            System.out.println("token is validated");
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    email,
+                    null,
+                    Collections.emptyList()
+            );
+//            System.out.println(authentication);
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+            );
+//            System.out.println(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+//            System.out.println("check " + SecurityContextHolder.getContext().getAuthentication());
 
-//        } catch (Exception ex) {
-//            // 🔥 JWT invalid / malformed / expired
-//            System.out.println("inside catch block");
-//            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-//            response.setContentType("application/json");
-//
-//            String timestamp = java.time.OffsetDateTime.now().toString();
-//
-//            response.getWriter().write("""
-//                        {
-//                          "status": 401,
-//                          "error": "UNAUTHORIZED",
-//                          "message": "Invalid or expired token",
-//                          "timestamp": "%s"
-//                        }
-//                    """.formatted(timestamp));
-//
-//            return;
-//        }
+        }
+
+        filterChain.doFilter(request, response);
     }
 }
 
