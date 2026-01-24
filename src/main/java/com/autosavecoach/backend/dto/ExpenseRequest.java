@@ -1,5 +1,6 @@
 package com.autosavecoach.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +9,7 @@ import java.time.LocalDate;
 
 @Setter
 @Getter
+@JsonIgnoreProperties(ignoreUnknown = false)
 public class ExpenseRequest {
 
     @NotBlank(message = "Title is required")

@@ -1,7 +1,10 @@
 package com.autosavecoach.backend.dto;
 
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
+@Getter
 public class ErrorResponse {
     private int status;
     private String error;
@@ -15,8 +18,4 @@ public class ErrorResponse {
         this.timestamp = LocalDateTime.now();
     }
 
-    public int getStatus() { return status; }
-    public String getError() { return error; }
-    public String getMessage() { return message; }
-    public LocalDateTime getTimestamp() { return timestamp; }
 }
