@@ -1,5 +1,6 @@
 package com.autosavecoach.backend.exception;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,17 +41,27 @@ public class GlobalExceptionHandler {
 
     // HttpMessageNotReadableException
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidRequestBody(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.name(),
-                "Invalid request body or format"
+        Throwable rootCause = ex.getMostSpecificCause();
+
+        if (rootCause instanceof UnrecognizedPropertyException upe) {
+            return ResponseEntity.badRequest().body(
+                    new ErrorResponse(
+                            400,
+                            "BAD_REQUEST",
+                            "Unknown field: " + upe.getPropertyName()
+                    )
+            );
+        }
+
+        return ResponseEntity.badRequest().body(
+                new ErrorResponse(
+                        400,
+                        "BAD_REQUEST",
+                        "Malformed JSON request"
+                )
         );
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(errorResponse);
     }
 
     // InvalidCategoryException, InvalidDateException, InvalidMonthException

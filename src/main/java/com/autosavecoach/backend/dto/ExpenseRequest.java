@@ -9,7 +9,6 @@ import java.time.LocalDate;
 
 @Setter
 @Getter
-@JsonIgnoreProperties(ignoreUnknown = false)
 public class ExpenseRequest {
 
     @NotBlank(message = "Title is required")
