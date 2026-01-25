@@ -1,5 +1,6 @@
 package com.autosavecoach.backend.repository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -23,6 +24,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Expense> findByUserIdAndCategory(
             Long userId,
             Category category
+    );
+
+    List<Expense> findByUserIdAndDateBetween(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate
     );
 }
 

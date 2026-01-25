@@ -1,11 +1,14 @@
 package com.autosavecoach.backend.service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.ChronoField;
 import java.util.List;
 import java.time.YearMonth;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.autosavecoach.backend.dto.BurnRateResponse;
 import com.autosavecoach.backend.dto.ExpenseRequest;
 import com.autosavecoach.backend.dto.ExpenseResponse;
 import com.autosavecoach.backend.exception.InvalidCategoryException;
@@ -18,9 +21,12 @@ import com.autosavecoach.backend.repository.ExpenseRepository;
 import com.autosavecoach.backend.util.CategoryUtil;
 import com.autosavecoach.backend.util.DateUtil;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.cglib.core.Local;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import static java.util.Calendar.DAY_OF_WEEK;
 
 @Service
 public class ExpenseService {
@@ -128,6 +134,66 @@ public class ExpenseService {
                         Expense::getCategory,
                         Collectors.summingDouble(Expense::getAmount)
                 ));
+    }
+
+    public Map<LocalDate, Double> getWeeklySpend() {
+        User user = getCurrentUser();
+
+        LocalDate today = LocalDate.now();
+        LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
+        LocalDate endOfWeek = today.with(DayOfWeek.SUNDAY);
+
+        return expenseRepository.findByUserIdAndDateBetween(
+                user.getId(),
+                startOfWeek,
+                endOfWeek
+        ).stream()
+                .collect(Collectors.groupingBy(
+                        Expense::getDate,
+                        Collectors.summingDouble(Expense::getAmount)
+                ));
+    }
+
+
+    public List<ExpenseResponse> getExpensesInRange(LocalDate from, LocalDate to) {
+        if(from.isAfter(to)){
+            throw new RuntimeException("From date cannot be after to date");
+        }
+
+        User user = getCurrentUser();
+
+        return expenseRepository.findByUserIdAndDateBetween(
+                user.getId(),
+                from,
+                to
+        ).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public BurnRateResponse getMonthlyBurnRate(){
+        User user = getCurrentUser();
+
+        LocalDate today =  LocalDate.now();
+        YearMonth  currentMonth = YearMonth.from(today);
+
+        LocalDate start = currentMonth.atDay(1);
+
+        List<Expense> expenses = expenseRepository.findByUserIdAndDateBetween(
+                user.getId(),
+                start,
+                today
+        );
+
+        double totalSpent = expenses.stream()
+                .mapToDouble(Expense::getAmount)
+                .sum();
+
+        int daysElapsed = today.getDayOfMonth();
+
+        double burnRate = daysElapsed == 0 ? 0 : totalSpent / daysElapsed;
+
+        return new BurnRateResponse(daysElapsed, totalSpent, burnRate);
     }
 
     private ExpenseResponse mapToResponse(Expense expense) {
