@@ -1,5 +1,8 @@
 package com.autosavecoach.backend.dto;
 
+import lombok.Getter;
+
+@Getter
 public class BudgetResponse {
 
     private Long id;
@@ -14,20 +17,5 @@ public class BudgetResponse {
         this.month = month;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public Double getAmount() {
-        return amount;
-    }
-
-    public String getMonth() {
-        return month;
-    }
 }
 

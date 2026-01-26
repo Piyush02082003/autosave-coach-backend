@@ -12,7 +12,7 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     Optional<Budget> findByUserIdAndCategoryAndMonth(
             Long userId,
             Category category,
-            String month
+            YearMonth month
     );
 
 }
