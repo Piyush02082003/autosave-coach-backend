@@ -14,7 +14,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.DateTimeException;
 import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 @Service
 public class BudgetService {
@@ -77,6 +80,53 @@ public class BudgetService {
                     "Cannot set budget for past month: " + month
             );
         }
+    }
+
+    public List<BudgetResponse> getAllBudgets(){
+        User user = getCurrentUser();
+
+        return budgetRepository.findByUserId(user.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public List<BudgetResponse> getBudgetsByMonth(String month){
+        YearMonth parsedMonth;
+        try{
+            parsedMonth = YearMonth.parse(month);
+        } catch (DateTimeParseException e){
+            throw new InvalidMonthException("Month must be in YYYY-MM format");
+        }
+
+        User user = getCurrentUser();
+
+        return budgetRepository
+                .findByUserIdAndMonth(user.getId(), parsedMonth)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public BudgetResponse getBudget(String category, String month){
+        Category parsedCategory = CategoryUtil.parse(category);
+
+        YearMonth parsedMonth;
+        try {
+            parsedMonth = YearMonth.parse(month);
+        } catch (DateTimeParseException e) {
+            throw new InvalidMonthException("Month must be in YYYY-MM format");
+        }
+
+        User user = getCurrentUser();
+
+        Budget budget = budgetRepository.findByUserIdAndCategoryAndMonth(
+                user.getId(),
+                parsedCategory,
+                parsedMonth
+        ).orElseThrow(() -> new RuntimeException("Budget not found"));
+
+        return mapToResponse(budget);
     }
 
     private BudgetResponse mapToResponse(Budget budget) {
