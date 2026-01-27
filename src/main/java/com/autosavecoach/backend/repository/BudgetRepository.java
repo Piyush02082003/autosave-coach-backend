@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.time.YearMonth;
 
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
-
     Optional<Budget> findByUserIdAndCategoryAndMonth(
             Long userId,
             Category category,
@@ -19,6 +18,6 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     List<Budget> findByUserId(Long userId);
 
     List<Budget> findByUserIdAndMonth(Long userId, YearMonth month);
+
+    List<Budget> findByUserIdAndCategory(Long id, Category category);
 }
-
-

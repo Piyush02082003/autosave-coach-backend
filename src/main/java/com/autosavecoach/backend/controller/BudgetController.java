@@ -2,8 +2,10 @@ package com.autosavecoach.backend.controller;
 
 import com.autosavecoach.backend.dto.BudgetRequest;
 import com.autosavecoach.backend.dto.BudgetResponse;
+import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.service.BudgetService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,18 +25,17 @@ public class BudgetController {
         return budgetService.setBudget(request);
     }
 
-    @GetMapping
-    public List<BudgetResponse> getAllBudgets(@RequestParam(required = false) String month){
-        if(month == null){
-            return budgetService.getAllBudgets();
-        }
-
-        return budgetService.getBudgetsByMonth(month);
+    @GetMapping("/{id}")
+    public BudgetResponse getBudgetById(@PathVariable Long id){
+        return budgetService.getBudgetById(id);
     }
 
-    @GetMapping("/{category}")
-    public BudgetResponse getBudget(@PathVariable String category, @RequestParam String month){
-        return budgetService.getBudget(category, month);
+    @GetMapping
+    public List<BudgetResponse> getBudgets(
+            @RequestParam(required = false) String month,
+            @RequestParam(required = false) String category
+    ) {
+        return budgetService.getBudgets(month, category);
     }
 }
 

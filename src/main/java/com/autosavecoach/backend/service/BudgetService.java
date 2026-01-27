@@ -2,7 +2,9 @@ package com.autosavecoach.backend.service;
 
 import com.autosavecoach.backend.dto.BudgetRequest;
 import com.autosavecoach.backend.dto.BudgetResponse;
+import com.autosavecoach.backend.exception.ForbiddenException;
 import com.autosavecoach.backend.exception.InvalidMonthException;
+import com.autosavecoach.backend.exception.NotFoundException;
 import com.autosavecoach.backend.model.Budget;
 import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.model.User;
@@ -14,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.DateTimeException;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
@@ -58,6 +61,72 @@ public class BudgetService {
         return mapToResponse(saved);
     }
 
+    public BudgetResponse getBudgetById(Long budgetId){
+
+        User user = getCurrentUser();
+
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Budget not found with id: " + budgetId
+                        )
+                );
+
+        if (!budget.getUser().getId().equals(user.getId())) {
+            throw new ForbiddenException("You are not allowed to access this budget");
+        }
+
+        return mapToResponse(budget);
+    }
+
+    public List<BudgetResponse> getBudgets(String month, String category) {
+
+        User user = getCurrentUser();
+
+        YearMonth parsedMonth = null;
+        if (month != null) {
+            try {
+                parsedMonth = YearMonth.parse(month);
+            } catch (DateTimeParseException e) {
+                throw new InvalidMonthException("Month must be in YYYY-MM format");
+            }
+        }
+
+        Category parsedCategory = null;
+        if (category != null) {
+            parsedCategory = CategoryUtil.parse(category);
+        }
+
+        List<Budget> budgets;
+
+        if (parsedMonth != null && parsedCategory != null) {
+            budgets = budgetRepository.findByUserIdAndCategoryAndMonth(
+                    user.getId(),
+                    parsedCategory,
+                    parsedMonth
+            ).map(List::of).orElse(List.of());
+        }
+        else if (parsedMonth != null) {
+            budgets = budgetRepository.findByUserIdAndMonth(
+                    user.getId(),
+                    parsedMonth
+            );
+        }
+        else if (parsedCategory != null) {
+            budgets = budgetRepository.findByUserIdAndCategory(
+                    user.getId(),
+                    parsedCategory
+            );
+        }
+        else {
+            budgets = budgetRepository.findByUserId(user.getId());
+        }
+
+        return budgets.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     private User getCurrentUser() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -80,53 +149,6 @@ public class BudgetService {
                     "Cannot set budget for past month: " + month
             );
         }
-    }
-
-    public List<BudgetResponse> getAllBudgets(){
-        User user = getCurrentUser();
-
-        return budgetRepository.findByUserId(user.getId())
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    public List<BudgetResponse> getBudgetsByMonth(String month){
-        YearMonth parsedMonth;
-        try{
-            parsedMonth = YearMonth.parse(month);
-        } catch (DateTimeParseException e){
-            throw new InvalidMonthException("Month must be in YYYY-MM format");
-        }
-
-        User user = getCurrentUser();
-
-        return budgetRepository
-                .findByUserIdAndMonth(user.getId(), parsedMonth)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    public BudgetResponse getBudget(String category, String month){
-        Category parsedCategory = CategoryUtil.parse(category);
-
-        YearMonth parsedMonth;
-        try {
-            parsedMonth = YearMonth.parse(month);
-        } catch (DateTimeParseException e) {
-            throw new InvalidMonthException("Month must be in YYYY-MM format");
-        }
-
-        User user = getCurrentUser();
-
-        Budget budget = budgetRepository.findByUserIdAndCategoryAndMonth(
-                user.getId(),
-                parsedCategory,
-                parsedMonth
-        ).orElseThrow(() -> new RuntimeException("Budget not found"));
-
-        return mapToResponse(budget);
     }
 
     private BudgetResponse mapToResponse(Budget budget) {
