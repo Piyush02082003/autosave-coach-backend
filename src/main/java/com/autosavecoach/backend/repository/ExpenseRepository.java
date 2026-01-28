@@ -3,11 +3,15 @@ package com.autosavecoach.backend.repository;
 import java.util.Arrays;
 import java.util.List;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.model.Expense;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Expense> findByUserId(Long userId);
@@ -31,6 +35,32 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             LocalDate startDate,
             LocalDate endDate
     );
+
+    @Query("""
+    SELECT e.category, SUM(e.amount)
+    FROM Expense e
+    WHERE e.user.id = :userId
+    AND e.date BETWEEN :startDate AND :endDate
+    GROUP BY e.category
+    """)
+    List<Object[]> sumExpensesRaw(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    default Map<Category, Double> sumExpensesByCategory(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        return sumExpensesRaw(userId, startDate, endDate)
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> (Category) r[0],
+                        r -> (Double) r[1]
+                ));
+    }
 }
 
 

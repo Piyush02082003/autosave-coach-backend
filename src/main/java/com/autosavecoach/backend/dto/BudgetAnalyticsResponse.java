@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.time.YearMonth;
 
 @Getter
-public class BudgetComparisonResponse {
+public class BudgetAnalyticsResponse {
 
     private YearMonth month;
     private Category category;
@@ -16,7 +16,7 @@ public class BudgetComparisonResponse {
     private double percentageUsed;
     private String status;
 
-    public BudgetComparisonResponse(
+    public BudgetAnalyticsResponse(
             YearMonth month,
             Category category,
             double budget,
