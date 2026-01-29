@@ -1,6 +1,7 @@
 package com.autosavecoach.backend.service;
 
 import com.autosavecoach.backend.dto.BudgetAnalyticsResponse;
+import com.autosavecoach.backend.dto.BudgetCalibrationResponse;
 import com.autosavecoach.backend.model.Budget;
 import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.model.User;
@@ -15,8 +16,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class BudgetAnalyticsService {
@@ -78,6 +81,74 @@ public class BudgetAnalyticsService {
                             determineStatus(spent, percentageUsed)
                     )
             );
+        }
+
+        return result;
+    }
+
+    public List<BudgetCalibrationResponse> getCalibration(int months, String categoryFilter) {
+
+        User user = getCurrentUser();
+        LocalDate fromDate = LocalDate.now().minusMonths(months);
+        Category filter = (categoryFilter != null)
+                ? CategoryUtil.parse(categoryFilter)
+                : null;
+
+        // 1️⃣ Monthly totals
+        List<Object[]> rows =
+                expenseRepository.avgSpendLastMonths(user.getId(), fromDate);
+
+        // 2️⃣ category → list of monthly totals
+        Map<Category, List<Double>> monthlyMap = new HashMap<>();
+
+        for (Object[] r : rows) {
+            Category cat = (Category) r[0];
+            Double monthlyTotal = (Double) r[3];
+
+            monthlyMap
+                    .computeIfAbsent(cat, k -> new ArrayList<>())
+                    .add(monthlyTotal);
+        }
+
+        // 3️⃣ category → avg monthly spend
+        Map<Category, Double> avgMonthlySpend = new HashMap<>();
+        for (var entry : monthlyMap.entrySet()) {
+            avgMonthlySpend.put(
+                    entry.getKey(),
+                    entry.getValue().stream().mapToDouble(Double::doubleValue).average().orElse(0)
+            );
+        }
+
+        // 4️⃣ Latest budget per category (IMPORTANT)
+        List<Budget> budgets =
+                budgetRepository.findLatestBudgetsPerCategory(
+                        user.getId(), filter
+                );
+
+        List<BudgetCalibrationResponse> result = new ArrayList<>();
+
+        for (Budget budget : budgets) {
+
+            Category cat = budget.getCategory();
+            double avgSpend = avgMonthlySpend.getOrDefault(cat, 0.0);
+            double current = budget.getAmount();
+
+            double deviation =
+                    avgSpend == 0 ? 0 : ((current - avgSpend) / avgSpend) * 100;
+
+            String status;
+            if (current < avgSpend * 0.85) status = "UNDERSET";
+            else if (current > avgSpend * 1.25) status = "OVERSET";
+            else status = "WELL_CALIBRATED";
+
+            result.add(new BudgetCalibrationResponse(
+                    cat,
+                    current,
+                    avgSpend,
+                    avgSpend,
+                    status,
+                    deviation
+            ));
         }
 
         return result;

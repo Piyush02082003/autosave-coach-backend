@@ -37,11 +37,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     );
 
     @Query("""
-    SELECT e.category, SUM(e.amount)
-    FROM Expense e
-    WHERE e.user.id = :userId
-    AND e.date BETWEEN :startDate AND :endDate
-    GROUP BY e.category
+        SELECT e.category, SUM(e.amount)
+        FROM Expense e
+        WHERE e.user.id = :userId
+        AND e.date BETWEEN :startDate AND :endDate
+        GROUP BY e.category
     """)
     List<Object[]> sumExpensesRaw(
             @Param("userId") Long userId,
@@ -61,6 +61,22 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
                         r -> (Double) r[1]
                 ));
     }
+
+    @Query("""
+SELECT 
+    e.category,
+    YEAR(e.date),
+    MONTH(e.date),
+    SUM(e.amount)
+FROM Expense e
+WHERE e.user.id = :userId
+  AND e.date >= :fromDate
+GROUP BY e.category, YEAR(e.date), MONTH(e.date)
+""")
+    List<Object[]> avgSpendLastMonths(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDate fromDate
+    );
 }
 
 

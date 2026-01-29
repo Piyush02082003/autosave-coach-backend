@@ -36,4 +36,20 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
             @Param("category") Category category
     );
 
+    @Query("""
+SELECT b
+FROM Budget b
+WHERE b.user.id = :userId
+  AND (:category IS NULL OR b.category = :category)
+  AND b.month = (
+      SELECT MAX(b2.month)
+      FROM Budget b2
+      WHERE b2.user.id = :userId
+        AND b2.category = b.category
+  )
+""")
+    List<Budget> findLatestBudgetsPerCategory(
+            @Param("userId") Long userId,
+            @Param("category") Category category
+    );
 }
