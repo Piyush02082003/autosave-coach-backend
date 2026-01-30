@@ -37,6 +37,7 @@ public class BudgetAnalyticsService {
     public List<BudgetAnalyticsResponse> getBudgetSummary(YearMonth startMonth, YearMonth endMonth, String categoryFilter) {
 
         User user = getCurrentUser();
+        System.out.println(user);
         Category category = (categoryFilter != null) ? CategoryUtil.parse(categoryFilter) : null;
 
         // Fetch all budgets
