@@ -2,7 +2,9 @@ package com.autosavecoach.backend.controller;
 
 import com.autosavecoach.backend.dto.BudgetAnalyticsResponse;
 import com.autosavecoach.backend.dto.BudgetCalibrationResponse;
+import com.autosavecoach.backend.dto.BudgetDriftResponse;
 import com.autosavecoach.backend.exception.InvalidMonthException;
+import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.service.BudgetAnalyticsService;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +37,17 @@ public class BudgetAnalyticsController {
     @GetMapping("/calibration")
     public List<BudgetCalibrationResponse> calibration(@RequestParam(defaultValue = "6") int months, @RequestParam(required = false) String category){
         return budgetAnalyticsService.getCalibration(months, category);
+    }
+
+    @GetMapping("/drift")
+    public List<BudgetDriftResponse> drift(@RequestParam(defaultValue = "0") int month, @RequestParam(required = false)String category){
+        YearMonth targetMonth =
+                month == 0 ? YearMonth.now() : YearMonth.now().minusMonths(month);
+
+        return budgetAnalyticsService.calDrift(
+                targetMonth,
+                category
+        );
     }
 
     private YearMonth parseMonth(String value) {

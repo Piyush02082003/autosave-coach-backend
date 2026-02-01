@@ -2,6 +2,7 @@ package com.autosavecoach.backend.service;
 
 import com.autosavecoach.backend.dto.BudgetAnalyticsResponse;
 import com.autosavecoach.backend.dto.BudgetCalibrationResponse;
+import com.autosavecoach.backend.dto.BudgetDriftResponse;
 import com.autosavecoach.backend.model.Budget;
 import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.model.User;
@@ -9,6 +10,7 @@ import com.autosavecoach.backend.repository.BudgetRepository;
 import com.autosavecoach.backend.repository.ExpenseRepository;
 import com.autosavecoach.backend.repository.UserRepository;
 import com.autosavecoach.backend.util.CategoryUtil;
+import org.springframework.cglib.core.Local;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -153,6 +155,63 @@ public class BudgetAnalyticsService {
         }
 
         return result;
+    }
+
+    public List<BudgetDriftResponse> calDrift(YearMonth month, String category){
+        User user = getCurrentUser();
+        Category filter = category==null ? null : CategoryUtil.parse(category);
+
+        LocalDate recentStart = month.atDay(1);
+        LocalDate recentEnd = month.atEndOfMonth();
+
+        LocalDate historyStart = month.minusMonths(3).atDay(1);
+        LocalDate historyEnd = month.minusMonths(1).atEndOfMonth();
+
+        Map<Category, Double> recentSpend = expenseRepository.sumExpensesByCategory(
+                user.getId(),
+                recentStart,
+                recentEnd
+        );
+
+        Map<Category, Double> historicalSpend = expenseRepository.sumExpensesByCategory(
+                user.getId(),
+                historyStart,
+                historyEnd
+        );
+
+        List<BudgetDriftResponse> result = new ArrayList<>();
+        for(Category cat: recentSpend.keySet()){
+            if(filter!=null && cat!=filter){
+                continue;
+            }
+
+            double recentAvg = recentSpend.getOrDefault(cat, 0.0);
+            double historicalAvg = historicalSpend.getOrDefault(cat, 0.0) / 3.0;
+
+            double driftPercent = historicalAvg == 0 ? 0 : ((recentAvg - historicalAvg) / historicalAvg) * 100;
+
+            result.add(new BudgetDriftResponse(
+                    month,
+                    cat,
+                    determineDriftStatus(driftPercent),
+                    recentAvg,
+                    historicalAvg,
+                    driftPercent
+            ));
+        }
+        return result;
+    }
+
+    private String determineDriftStatus(double driftPercent) {
+
+        double driftAbs = Math.abs(driftPercent);
+        if(driftAbs < 15){
+            return "NONE";
+        } else if (driftAbs < 35) {
+            return "MINOR";
+        } else {
+            return "MAJOR";
+        }
     }
 
     private String determineStatus(double spent, double percentageUsed) {
