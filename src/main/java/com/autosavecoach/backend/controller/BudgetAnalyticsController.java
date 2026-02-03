@@ -3,6 +3,7 @@ package com.autosavecoach.backend.controller;
 import com.autosavecoach.backend.dto.BudgetAnalyticsResponse;
 import com.autosavecoach.backend.dto.BudgetCalibrationResponse;
 import com.autosavecoach.backend.dto.BudgetDriftResponse;
+import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.exception.InvalidMonthException;
 import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.service.BudgetAnalyticsService;
@@ -35,8 +36,13 @@ public class BudgetAnalyticsController {
     }
 
     @GetMapping("/calibration")
-    public List<BudgetCalibrationResponse> calibration(@RequestParam(defaultValue = "6") int months, @RequestParam(required = false) String category){
-        return budgetAnalyticsService.getCalibration(months, category);
+    public List<BudgetCalibrationResponse> calibration(@RequestParam(defaultValue = "6") int month, @RequestParam(required = false) String category){
+        System.out.println("inside controller");
+        if (month < 1 || month > 12) {
+            throw new BadRequestException("Months must be between 1 and 12");
+        }
+
+        return budgetAnalyticsService.getCalibration(month, category);
     }
 
     @GetMapping("/drift")

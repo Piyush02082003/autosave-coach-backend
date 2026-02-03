@@ -89,10 +89,10 @@ public class BudgetAnalyticsService {
         return result;
     }
 
-    public List<BudgetCalibrationResponse> getCalibration(int months, String categoryFilter) {
+    public List<BudgetCalibrationResponse> getCalibration(int month, String categoryFilter) {
 
         User user = getCurrentUser();
-        LocalDate fromDate = LocalDate.now().minusMonths(months);
+        LocalDate fromDate = LocalDate.now().minusMonths(month);
         Category filter = (categoryFilter != null)
                 ? CategoryUtil.parse(categoryFilter)
                 : null;
@@ -144,11 +144,13 @@ public class BudgetAnalyticsService {
             else if (current > avgSpend * 1.25) status = "OVERSET";
             else status = "WELL_CALIBRATED";
 
+            double recommended = Math.round(avgSpend * 1.10 * 100.0) / 100.0;
+
             result.add(new BudgetCalibrationResponse(
                     cat,
                     current,
                     avgSpend,
-                    avgSpend,
+                    recommended,
                     status,
                     deviation
             ));
