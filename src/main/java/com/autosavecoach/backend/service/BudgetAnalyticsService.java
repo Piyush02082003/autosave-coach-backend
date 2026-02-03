@@ -165,9 +165,11 @@ public class BudgetAnalyticsService {
 
         LocalDate recentStart = month.atDay(1);
         LocalDate recentEnd = month.atEndOfMonth();
+        System.out.println(recentStart+" "+recentEnd);
 
         LocalDate historyStart = month.minusMonths(3).atDay(1);
         LocalDate historyEnd = month.minusMonths(1).atEndOfMonth();
+        System.out.println(historyStart+" "+historyEnd);
 
         Map<Category, Double> recentSpend = expenseRepository.sumExpensesByCategory(
                 user.getId(),
@@ -187,10 +189,10 @@ public class BudgetAnalyticsService {
                 continue;
             }
 
-            double recentAvg = recentSpend.getOrDefault(cat, 0.0);
-            double historicalAvg = historicalSpend.getOrDefault(cat, 0.0) / 3.0;
+            double recentAvg = round(recentSpend.getOrDefault(cat, 0.0));
+            double historicalAvg = round(historicalSpend.getOrDefault(cat, 0.0) / 3.0);
 
-            double driftPercent = historicalAvg == 0 ? 0 : ((recentAvg - historicalAvg) / historicalAvg) * 100;
+            double driftPercent = historicalAvg == 0 ? 0 : round(((recentAvg - historicalAvg) / historicalAvg) * 100);
 
             result.add(new BudgetDriftResponse(
                     month,
@@ -202,6 +204,10 @@ public class BudgetAnalyticsService {
             ));
         }
         return result;
+    }
+
+    private double round(double val) {
+        return Math.round(val * 100.0) / 100.0;
     }
 
     private String determineDriftStatus(double driftPercent) {

@@ -47,8 +47,14 @@ public class BudgetAnalyticsController {
 
     @GetMapping("/drift")
     public List<BudgetDriftResponse> drift(@RequestParam(defaultValue = "0") int month, @RequestParam(required = false)String category){
+        if (month < 0 || month > 12) {
+            throw new BadRequestException("Months must be between 1 and 12");
+        }
+
         YearMonth targetMonth =
                 month == 0 ? YearMonth.now() : YearMonth.now().minusMonths(month);
+
+        System.out.println(targetMonth);
 
         return budgetAnalyticsService.calDrift(
                 targetMonth,
