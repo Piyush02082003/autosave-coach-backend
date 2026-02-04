@@ -77,6 +77,42 @@ GROUP BY e.category, YEAR(e.date), MONTH(e.date)
             @Param("userId") Long userId,
             @Param("fromDate") LocalDate fromDate
     );
+
+    @Query("""
+    SELECT COALESCE(SUM(e.amount), 0)
+    FROM Expense e
+    WHERE e.user.id = :userId
+      AND e.date BETWEEN :startDate AND :endDate
+""")
+    double sumExpenses(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(e.amount) / COUNT(DISTINCT e.date), 0)
+    FROM Expense e
+    WHERE e.user.id = :userId
+      AND e.category = :category
+      AND e.date >= :fromDate
+""")
+    double avgDailySpend(
+            @Param("userId") Long userId,
+            @Param("category") Category category,
+            @Param("fromDate") LocalDate fromDate
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(e.amount) / COUNT(DISTINCT e.date), 0)
+    FROM Expense e
+    WHERE e.user.id = :userId
+      AND e.date >= :fromDate
+""")
+    double avgDailySpendOverall(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDate fromDate
+    );
 }
 
 

@@ -3,6 +3,7 @@ package com.autosavecoach.backend.controller;
 import com.autosavecoach.backend.dto.BudgetAnalyticsResponse;
 import com.autosavecoach.backend.dto.BudgetCalibrationResponse;
 import com.autosavecoach.backend.dto.BudgetDriftResponse;
+import com.autosavecoach.backend.dto.BudgetFeasibilityResponse;
 import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.exception.InvalidMonthException;
 import com.autosavecoach.backend.model.Category;
@@ -60,6 +61,11 @@ public class BudgetAnalyticsController {
                 targetMonth,
                 category
         );
+    }
+
+    @GetMapping("/feasibility")
+    public BudgetFeasibilityResponse feasibility() {
+        return budgetAnalyticsService.calFeasibility();
     }
 
     private YearMonth parseMonth(String value) {

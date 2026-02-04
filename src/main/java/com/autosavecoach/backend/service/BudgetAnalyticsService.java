@@ -1,8 +1,7 @@
 package com.autosavecoach.backend.service;
 
-import com.autosavecoach.backend.dto.BudgetAnalyticsResponse;
-import com.autosavecoach.backend.dto.BudgetCalibrationResponse;
-import com.autosavecoach.backend.dto.BudgetDriftResponse;
+import com.autosavecoach.backend.dto.*;
+import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.model.Budget;
 import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.model.User;
@@ -17,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -206,8 +206,99 @@ public class BudgetAnalyticsService {
         return result;
     }
 
+    public BudgetFeasibilityResponse calFeasibility() {
+        User user = getCurrentUser();
+        YearMonth month = YearMonth.now();
+
+        LocalDate start = month.atDay(1);
+        LocalDate today = LocalDate.now();
+        LocalDate end = month.atEndOfMonth();
+
+        int daysLeft = (int) ChronoUnit.DAYS.between(today, end) + 1;
+
+        if(daysLeft<=0){
+            throw new BadRequestException("Month already ended");
+        }
+
+        double totalBudget = budgetRepository.sumBudgetsForMonth(user.getId(), month);
+        double spentSoFar = expenseRepository.sumExpenses(user.getId(), start, today);
+
+        double remainingBudget = totalBudget - spentSoFar;
+        double requiredPerDay = remainingBudget<=0 ? 0 : remainingBudget / daysLeft;
+
+        double overallHistory =
+                expenseRepository.avgDailySpend(
+                        user.getId(),
+                        null,
+                        LocalDate.now().minusMonths(3)
+                );
+
+        OverallFeasibility overall = new OverallFeasibility(
+                round(totalBudget),
+                round(spentSoFar),
+                round(remainingBudget),
+                daysLeft,
+                round(requiredPerDay),
+                determineFeasibility(requiredPerDay, overallHistory)
+        );
+
+        Map<Category, Double> spentByCategory = expenseRepository.sumExpensesByCategory(
+                user.getId(),
+                start,
+                today
+        );
+
+        Map<Category, Double> budgetByCategory =
+                budgetRepository.findByUserIdAndMonth(user.getId(), month)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                Budget::getCategory,
+                                Budget::getAmount
+                        ));
+
+        List<CategoryFeasibility> categories = new ArrayList<>();
+
+        for(Category cat: budgetByCategory.keySet()){
+            double catBudget = budgetByCategory.getOrDefault(cat, 0.0);
+            double catSpent = spentByCategory.getOrDefault(cat, 0.0);
+
+            double remaining = catBudget - catSpent;
+            double requiredDaily  = remaining<= 0 ? 0 : remaining / daysLeft;
+
+            double historyPerDay =
+                    expenseRepository.avgDailySpend(
+                            user.getId(),
+                            cat,
+                            LocalDate.now().minusMonths(3)
+                    );
+
+            categories.add(new CategoryFeasibility(
+                    cat,
+                    round(requiredDaily),
+                    round(historyPerDay),
+                    determineFeasibility(requiredDaily, historyPerDay)
+            ));
+        }
+
+        return new BudgetFeasibilityResponse(
+                month,
+                overall,
+                categories
+        );
+    }
+
     private double round(double val) {
         return Math.round(val * 100.0) / 100.0;
+    }
+
+    private String determineFeasibility(double requiredPerDay, double historyPerDay) {
+
+        if (historyPerDay <= 0) return "UNKNOWN";
+
+        if (requiredPerDay <= historyPerDay * 1.1) return "SAFE";
+        if (requiredPerDay <= historyPerDay * 1.4) return "TIGHT";
+
+        return "UNLIKELY";
     }
 
     private String determineDriftStatus(double driftPercent) {

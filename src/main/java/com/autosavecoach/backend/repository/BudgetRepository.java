@@ -52,4 +52,15 @@ WHERE b.user.id = :userId
             @Param("userId") Long userId,
             @Param("category") Category category
     );
+
+    @Query("""
+    SELECT COALESCE(SUM(b.amount), 0)
+    FROM Budget b
+    WHERE b.user.id = :userId
+      AND b.month = :month
+""")
+    double sumBudgetsForMonth(
+            @Param("userId") Long userId,
+            @Param("month") YearMonth month
+    );
 }
