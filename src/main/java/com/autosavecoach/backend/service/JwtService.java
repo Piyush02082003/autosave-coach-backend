@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -15,14 +16,18 @@ import java.util.function.Function;
 public class JwtService {
 
     // 🔐 Secret key (later move to application.properties)
-    private static final String SECRET_KEY = "WJg/xoyaitiigDgC879okx6I4NO8BJHJHg1/bnz9CjY=";
+    private final String secretKey;
+    public JwtService(
+            @Value("${jwt.secret}") String secretKey){
+        this.secretKey = secretKey;
+    }
 
     // ⏱ Token validity (24 hours)
     private static final long JWT_EXPIRATION = 24 * 60 * 60 * 1000;
 
     // 🔑 Convert SECRET_KEY to signing Key
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 

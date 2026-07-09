@@ -34,3 +34,6 @@ build/
 
 # H2 local database files
 data/
+
+#Enviroment variables
+.env
