@@ -41,7 +41,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String email = jwtService.extractEmail(token);
 //        System.out.println(email);
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-//            System.out.println("email is not null and authentication is not null");
+//            System.out.println("email is not null and authentication is null");
             if (!jwtService.isTokenValid(token, email)) {
                 throw new RuntimeException("Invalid JWT");
             }

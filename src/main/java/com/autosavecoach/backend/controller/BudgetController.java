@@ -7,8 +7,10 @@ import com.autosavecoach.backend.service.BudgetService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.UUID;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/budgets")
@@ -26,7 +28,7 @@ public class BudgetController {
     }
 
     @GetMapping("/{id}")
-    public BudgetResponse getBudgetById(@PathVariable Long id){
+    public BudgetResponse getBudgetById(@PathVariable UUID id){
         return budgetService.getBudgetById(id);
     }
 

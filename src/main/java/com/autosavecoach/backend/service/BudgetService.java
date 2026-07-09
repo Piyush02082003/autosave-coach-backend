@@ -21,6 +21,7 @@ import java.time.DateTimeException;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class BudgetService {
@@ -61,7 +62,7 @@ public class BudgetService {
         return mapToResponse(saved);
     }
 
-    public BudgetResponse getBudgetById(Long budgetId){
+    public BudgetResponse getBudgetById(UUID budgetId){
 
         User user = getCurrentUser();
 

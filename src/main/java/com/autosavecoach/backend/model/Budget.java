@@ -3,6 +3,7 @@ package com.autosavecoach.backend.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.YearMonth;
+import java.util.UUID;
 
 @Entity
 @Table(name = "budgets")
@@ -10,8 +11,8 @@ import java.time.YearMonth;
 public class Budget {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Enumerated(EnumType.STRING)
     private Category category;

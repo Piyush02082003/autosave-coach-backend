@@ -6,6 +6,7 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 import java.time.YearMonth;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.autosavecoach.backend.dto.BurnRateResponse;
@@ -95,7 +96,7 @@ public class ExpenseService {
                 .collect(Collectors.toList());
     }
 
-    public ExpenseResponse getExpenseById(Long expenseId) {
+    public ExpenseResponse getExpenseById(UUID expenseId) {
         User user = getCurrentUser();
 
         Expense expense = expenseRepository

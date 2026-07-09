@@ -2,15 +2,17 @@ package com.autosavecoach.backend.dto;
 
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 public class BudgetResponse {
 
-    private Long id;
+    private UUID id;
     private String category;
     private Double amount;
     private String month;
 
-    public BudgetResponse(Long id, String category, Double amount, String month) {
+    public BudgetResponse(UUID id, String category, Double amount, String month) {
         this.id = id;
         this.category = category;
         this.amount = amount;

@@ -1,10 +1,7 @@
 package com.autosavecoach.backend.repository;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.time.LocalDate;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.autosavecoach.backend.model.Category;
@@ -13,25 +10,25 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface ExpenseRepository extends JpaRepository<Expense, Long> {
-    List<Expense> findByUserId(Long userId);
+public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
+    List<Expense> findByUserId(UUID userId);
 
-    Optional<Expense> findByIdAndUserId(Long id, Long userId);
+    Optional<Expense> findByIdAndUserId(UUID id, UUID userId);
 
     List<Expense> findByUserIdAndCategoryAndDateBetween(
-            Long userId,
+            UUID userId,
             Category category,
             LocalDate startDate,
             LocalDate endDate
     );
 
     List<Expense> findByUserIdAndCategory(
-            Long userId,
+            UUID userId,
             Category category
     );
 
     List<Expense> findByUserIdAndDateBetween(
-            Long userId,
+            UUID userId,
             LocalDate startDate,
             LocalDate endDate
     );
@@ -44,13 +41,13 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
         GROUP BY e.category
     """)
     List<Object[]> sumExpensesRaw(
-            @Param("userId") Long userId,
+            @Param("userId") UUID userId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
 
     default Map<Category, Double> sumExpensesByCategory(
-            Long userId,
+            UUID userId,
             LocalDate startDate,
             LocalDate endDate
     ) {
@@ -74,7 +71,7 @@ WHERE e.user.id = :userId
 GROUP BY e.category, YEAR(e.date), MONTH(e.date)
 """)
     List<Object[]> avgSpendLastMonths(
-            @Param("userId") Long userId,
+            @Param("userId") UUID userId,
             @Param("fromDate") LocalDate fromDate
     );
 
@@ -85,7 +82,7 @@ GROUP BY e.category, YEAR(e.date), MONTH(e.date)
       AND e.date BETWEEN :startDate AND :endDate
 """)
     double sumExpenses(
-            @Param("userId") Long userId,
+            @Param("userId") UUID userId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
@@ -98,7 +95,7 @@ GROUP BY e.category, YEAR(e.date), MONTH(e.date)
       AND e.date >= :fromDate
 """)
     double avgDailySpend(
-            @Param("userId") Long userId,
+            @Param("userId") UUID userId,
             @Param("category") Category category,
             @Param("fromDate") LocalDate fromDate
     );
@@ -110,7 +107,7 @@ GROUP BY e.category, YEAR(e.date), MONTH(e.date)
       AND e.date >= :fromDate
 """)
     double avgDailySpendOverall(
-            @Param("userId") Long userId,
+            @Param("userId") UUID userId,
             @Param("fromDate") LocalDate fromDate
     );
 }

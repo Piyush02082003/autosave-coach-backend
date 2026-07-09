@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.time.YearMonth;
 import java.util.Map;
+import java.util.UUID;
 
 import com.autosavecoach.backend.dto.BurnRateResponse;
 import com.autosavecoach.backend.dto.ExpenseRequest;
@@ -39,7 +40,7 @@ public class ExpenseController {
 
     // Get single expense by id
     @GetMapping("/{expenseId}")
-    public ExpenseResponse getExpenseById(@PathVariable Long expenseId) {
+    public ExpenseResponse getExpenseById(@PathVariable UUID expenseId) {
         return expenseService.getExpenseById(expenseId);
     }
 

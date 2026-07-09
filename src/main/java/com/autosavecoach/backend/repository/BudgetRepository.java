@@ -9,19 +9,20 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 import java.time.YearMonth;
+import java.util.UUID;
 
-public interface BudgetRepository extends JpaRepository<Budget, Long> {
+public interface BudgetRepository extends JpaRepository<Budget, UUID> {
     Optional<Budget> findByUserIdAndCategoryAndMonth(
-            Long userId,
+            UUID userId,
             Category category,
             YearMonth month
     );
 
-    List<Budget> findByUserId(Long userId);
+    List<Budget> findByUserId(UUID userId);
 
-    List<Budget> findByUserIdAndMonth(Long userId, YearMonth month);
+    List<Budget> findByUserIdAndMonth(UUID userId, YearMonth month);
 
-    List<Budget> findByUserIdAndCategory(Long id, Category category);
+    List<Budget> findByUserIdAndCategory(UUID id, Category category);
 
     @Query("""
     SELECT b FROM Budget b
@@ -30,7 +31,7 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     AND (:category IS NULL OR b.category = :category)
     """)
     List<Budget> findBudgetsForAnalytics(
-            @Param("userId") Long userId,
+            @Param("userId") UUID userId,
             @Param("start") YearMonth start,
             @Param("end") YearMonth end,
             @Param("category") Category category
@@ -49,7 +50,7 @@ WHERE b.user.id = :userId
   )
 """)
     List<Budget> findLatestBudgetsPerCategory(
-            @Param("userId") Long userId,
+            @Param("userId") UUID userId,
             @Param("category") Category category
     );
 
@@ -60,7 +61,7 @@ WHERE b.user.id = :userId
       AND b.month = :month
 """)
     double sumBudgetsForMonth(
-            @Param("userId") Long userId,
+            @Param("userId") UUID userId,
             @Param("month") YearMonth month
     );
 }
