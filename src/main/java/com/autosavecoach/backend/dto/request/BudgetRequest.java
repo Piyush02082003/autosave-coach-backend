@@ -1,6 +1,5 @@
-package com.autosavecoach.backend.dto;
+package com.autosavecoach.backend.dto.request;
 
-import com.autosavecoach.backend.model.Category;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;

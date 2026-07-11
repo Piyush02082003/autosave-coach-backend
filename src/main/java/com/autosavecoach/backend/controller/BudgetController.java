@@ -1,16 +1,13 @@
 package com.autosavecoach.backend.controller;
 
-import com.autosavecoach.backend.dto.BudgetRequest;
-import com.autosavecoach.backend.dto.BudgetResponse;
-import com.autosavecoach.backend.model.User;
+import com.autosavecoach.backend.dto.request.BudgetRequest;
+import com.autosavecoach.backend.dto.response.BudgetResponse;
 import com.autosavecoach.backend.service.BudgetService;
 import jakarta.validation.Valid;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/budgets")

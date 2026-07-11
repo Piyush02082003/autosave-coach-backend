@@ -2,7 +2,6 @@ package com.autosavecoach.backend.service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.ChronoField;
 import java.util.List;
 import java.time.YearMonth;
 import java.util.Map;
@@ -10,8 +9,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.autosavecoach.backend.dto.BurnRateResponse;
-import com.autosavecoach.backend.dto.ExpenseRequest;
-import com.autosavecoach.backend.dto.ExpenseResponse;
+import com.autosavecoach.backend.dto.request.ExpenseRequest;
+import com.autosavecoach.backend.dto.response.ExpenseResponse;
 import com.autosavecoach.backend.exception.InvalidCategoryException;
 import com.autosavecoach.backend.exception.InvalidDateException;
 import com.autosavecoach.backend.model.Category;
@@ -19,15 +18,9 @@ import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.model.Expense;
 import com.autosavecoach.backend.repository.UserRepository;
 import com.autosavecoach.backend.repository.ExpenseRepository;
-import com.autosavecoach.backend.util.CategoryUtil;
-import com.autosavecoach.backend.util.DateUtil;
-import jakarta.validation.constraints.NotNull;
-import org.springframework.cglib.core.Local;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import static java.util.Calendar.DAY_OF_WEEK;
 
 @Service
 public class ExpenseService {

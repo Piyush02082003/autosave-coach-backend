@@ -1,4 +1,4 @@
-package com.autosavecoach.backend.dto;
+package com.autosavecoach.backend.dto.response;
 
 import lombok.Getter;
 

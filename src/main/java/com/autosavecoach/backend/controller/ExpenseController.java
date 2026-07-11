@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.autosavecoach.backend.dto.BurnRateResponse;
-import com.autosavecoach.backend.dto.ExpenseRequest;
-import com.autosavecoach.backend.dto.ExpenseResponse;
+import com.autosavecoach.backend.dto.request.ExpenseRequest;
+import com.autosavecoach.backend.dto.response.ExpenseResponse;
 import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.service.ExpenseService;
 import jakarta.validation.Valid;

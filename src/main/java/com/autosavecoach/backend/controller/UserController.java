@@ -1,8 +1,8 @@
 package com.autosavecoach.backend.controller;
 
-import com.autosavecoach.backend.dto.LoginRequest;
-import com.autosavecoach.backend.dto.LoginResponse;
-import com.autosavecoach.backend.dto.UserResponse;
+import com.autosavecoach.backend.dto.request.LoginRequest;
+import com.autosavecoach.backend.dto.response.LoginResponse;
+import com.autosavecoach.backend.dto.response.UserResponse;
 import com.autosavecoach.backend.exception.UnauthorizedException;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.service.UserService;

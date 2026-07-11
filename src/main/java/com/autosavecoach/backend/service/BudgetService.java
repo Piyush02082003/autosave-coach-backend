@@ -1,7 +1,7 @@
 package com.autosavecoach.backend.service;
 
-import com.autosavecoach.backend.dto.BudgetRequest;
-import com.autosavecoach.backend.dto.BudgetResponse;
+import com.autosavecoach.backend.dto.request.BudgetRequest;
+import com.autosavecoach.backend.dto.response.BudgetResponse;
 import com.autosavecoach.backend.exception.ForbiddenException;
 import com.autosavecoach.backend.exception.InvalidMonthException;
 import com.autosavecoach.backend.exception.NotFoundException;
@@ -11,13 +11,10 @@ import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.repository.BudgetRepository;
 import com.autosavecoach.backend.repository.UserRepository;
 import com.autosavecoach.backend.util.CategoryUtil;
-import com.autosavecoach.backend.util.MonthUtil;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.nio.file.AccessDeniedException;
-import java.time.DateTimeException;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.List;

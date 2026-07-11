@@ -1,6 +1,6 @@
 package com.autosavecoach.backend.service;
 
-import com.autosavecoach.backend.dto.LoginRequest;
+import com.autosavecoach.backend.dto.request.LoginRequest;
 import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.exception.ConflictException;
 import com.autosavecoach.backend.exception.NotFoundException;

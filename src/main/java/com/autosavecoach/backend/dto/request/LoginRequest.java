@@ -1,4 +1,4 @@
-package com.autosavecoach.backend.dto;
+package com.autosavecoach.backend.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;
