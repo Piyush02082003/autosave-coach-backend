@@ -1,8 +1,10 @@
 package com.autosavecoach.backend.controller;
 
+import com.autosavecoach.backend.dto.request.ChangePasswordRequest;
+import com.autosavecoach.backend.dto.request.ForgotPasswordRequest;
 import com.autosavecoach.backend.dto.request.LoginRequest;
-import com.autosavecoach.backend.dto.response.LoginResponse;
-import com.autosavecoach.backend.dto.response.UserResponse;
+import com.autosavecoach.backend.dto.request.ResetPasswordRequest;
+import com.autosavecoach.backend.dto.response.*;
 import com.autosavecoach.backend.exception.UnauthorizedException;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.service.UserService;
@@ -11,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
@@ -74,5 +77,45 @@ public class UserController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    // Change Password
+    @PostMapping("/change-password")
+    public ResponseEntity<ChangePasswordResponse> changePassword(@RequestBody ChangePasswordRequest request){
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        userService.changePassword(email, request);
+
+        return ResponseEntity.ok(
+          new ChangePasswordResponse("Password changed successfully")
+        );
+    }
+
+    // Forgot Password
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ForgotPasswordResponse> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        userService.forgotPassword(request);
+
+        return ResponseEntity.ok(
+                new ForgotPasswordResponse(
+                        "If an account with that email exists, a password reset link has been sent."
+                )
+        );
+    }
+
+    // Reset Password
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResetPasswordResponse> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        userService.resetPassword(request);
+
+        return ResponseEntity.ok(
+                new ResetPasswordResponse("Password reset successfully")
+        );
     }
 }
