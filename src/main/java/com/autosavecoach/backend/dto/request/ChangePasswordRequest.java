@@ -1,11 +1,13 @@
 package com.autosavecoach.backend.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Valid
 public class ChangePasswordRequest {
     @NotBlank(message = "Old password is required")
     private String oldPassword;

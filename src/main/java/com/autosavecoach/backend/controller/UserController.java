@@ -81,7 +81,7 @@ public class UserController {
 
     // Change Password
     @PostMapping("/change-password")
-    public ResponseEntity<ChangePasswordResponse> changePassword(@RequestBody ChangePasswordRequest request){
+    public ResponseEntity<ChangePasswordResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request){
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getName();

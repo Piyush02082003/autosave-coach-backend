@@ -25,12 +25,14 @@ public class UserService{
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, PasswordResetTokenRepository passwordResetTokenRepository){
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.emailService = emailService;
     }
 
     //  User Sign up
@@ -156,9 +158,14 @@ public class UserService{
 
         passwordResetTokenRepository.save(token);
 
-        // TODO:
-        // Send email containing:
-        // https://your-frontend/reset-password?token=<token>
+        String resetLink =
+                "http://localhost:3000/reset-password?token="
+                        + token.getToken();
+
+        emailService.sendPasswordResetEmail(
+                user.getEmail(),
+                resetLink
+        );
     }
 
     // Reset password
