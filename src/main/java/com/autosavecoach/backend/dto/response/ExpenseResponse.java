@@ -1,6 +1,8 @@
 package com.autosavecoach.backend.dto.response;
 
 import lombok.Getter;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -10,10 +12,10 @@ public class ExpenseResponse {
     private UUID id;
     private String title;
     private String category;
-    private Double amount;
+    private BigDecimal amount;
     private LocalDate date;
 
-    public ExpenseResponse(UUID id, String title, String category, Double amount, LocalDate date) {
+    public ExpenseResponse(UUID id, String title, String category, BigDecimal amount, LocalDate date) {
         this.id = id;
         this.title = title;
         this.category = category;

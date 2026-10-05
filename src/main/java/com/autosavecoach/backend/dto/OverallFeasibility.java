@@ -2,21 +2,23 @@ package com.autosavecoach.backend.dto;
 
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 public class OverallFeasibility {
-    private double totalBudget;
-    private double spentSoFar;
-    private double remainingBudget;
+    private BigDecimal totalBudget;
+    private BigDecimal spentSoFar;
+    private BigDecimal remainingBudget;
     private int daysLeft;
-    private double allowedPerDay;
+    private BigDecimal allowedPerDay;
     private String status;
 
     public OverallFeasibility(
-            double totalBudget,
-            double spentSoFar,
-            double remainingBudget,
+            BigDecimal totalBudget,
+            BigDecimal spentSoFar,
+            BigDecimal remainingBudget,
             int daysLeft,
-            double allowedPerDay,
+            BigDecimal allowedPerDay,
             String status
     ) {
         this.totalBudget = totalBudget;

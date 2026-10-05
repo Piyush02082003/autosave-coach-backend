@@ -7,9 +7,9 @@ import com.autosavecoach.backend.exception.InvalidMonthException;
 import com.autosavecoach.backend.exception.NotFoundException;
 import com.autosavecoach.backend.model.Budget;
 import com.autosavecoach.backend.model.User;
+import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.repository.BudgetRepository;
 import com.autosavecoach.backend.repository.UserRepository;
-import com.autosavecoach.backend.util.CategoryUtil;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,29 +24,33 @@ public class BudgetService {
 
     private final BudgetRepository budgetRepository;
     private final UserRepository userRepository;
+    private final CategoryService categoryService;
 
     public BudgetService(BudgetRepository budgetRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository, CategoryService categoryService) {
         this.budgetRepository = budgetRepository;
         this.userRepository = userRepository;
+        this.categoryService = categoryService;
     }
 
     public BudgetResponse setBudget(BudgetRequest request) {
-
         User user = getCurrentUser();
-        TransactionCategory transactionCategory = CategoryUtil.parse(request.getCategory());
+        Category category = categoryService.getCategoryForUser(
+                request.getCategory(),
+                user
+        );
         YearMonth month = YearMonth.parse(request.getMonth());
 
         validateMonth(month);
 
         Budget budget = budgetRepository.findByUserIdAndCategoryAndMonth(
                 user.getId(),
-                transactionCategory,
+                category,
                 month
         ).orElseGet(() -> {
             Budget b = new Budget();
             b.setUser(user);
-            b.setTransactionCategory(transactionCategory);
+            b.setCategory(category);
             b.setMonth(month);
             return b;
         });
@@ -89,17 +93,20 @@ public class BudgetService {
             }
         }
 
-        TransactionCategory parsedTransactionCategory = null;
+        Category parsedCategory = null;
         if (category != null) {
-            parsedTransactionCategory = CategoryUtil.parse(category);
+            parsedCategory = categoryService.getCategoryForUser(
+                    category,
+                    user
+            );
         }
 
         List<Budget> budgets;
 
-        if (parsedMonth != null && parsedTransactionCategory != null) {
+        if (parsedMonth != null && parsedCategory != null) {
             budgets = budgetRepository.findByUserIdAndCategoryAndMonth(
                     user.getId(),
-                    parsedTransactionCategory,
+                    parsedCategory,
                     parsedMonth
             ).map(List::of).orElse(List.of());
         }
@@ -109,10 +116,10 @@ public class BudgetService {
                     parsedMonth
             );
         }
-        else if (parsedTransactionCategory != null) {
+        else if (parsedCategory != null) {
             budgets = budgetRepository.findByUserIdAndCategory(
                     user.getId(),
-                    parsedTransactionCategory
+                    parsedCategory
             );
         }
         else {
@@ -151,7 +158,7 @@ public class BudgetService {
     private BudgetResponse mapToResponse(Budget budget) {
         return new BudgetResponse(
                 budget.getId(),
-                budget.getTransactionCategory().name(),
+                budget.getCategory().getName(),
                 budget.getAmount(),
                 budget.getMonth().toString()
         );

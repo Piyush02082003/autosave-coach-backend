@@ -7,11 +7,13 @@ import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.repository.BudgetRepository;
 import com.autosavecoach.backend.repository.ExpenseRepository;
 import com.autosavecoach.backend.repository.UserRepository;
-import com.autosavecoach.backend.util.CategoryUtil;
+import com.autosavecoach.backend.model.Category;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
@@ -27,26 +29,42 @@ public class BudgetAnalyticsService {
     private final BudgetRepository budgetRepository;
     private final ExpenseRepository expenseRepository;
     private final UserRepository userRepository;
+    private final CategoryService categoryService;
 
-    public BudgetAnalyticsService(BudgetRepository budgetRepository, ExpenseRepository expenseRepository, UserRepository userRepository) {
+    public BudgetAnalyticsService(
+            BudgetRepository budgetRepository,
+            ExpenseRepository expenseRepository,
+            UserRepository userRepository,
+            CategoryService categoryService
+    ) {
         this.budgetRepository = budgetRepository;
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
+        this.categoryService = categoryService;
     }
 
-    public List<BudgetAnalyticsResponse> getBudgetSummary(YearMonth startMonth, YearMonth endMonth, String categoryFilter) {
+    public List<BudgetAnalyticsResponse> getBudgetSummary(
+            YearMonth startMonth,
+            YearMonth endMonth,
+            String categoryFilter
+    ) {
 
         User user = getCurrentUser();
+
         System.out.println(user);
-        TransactionCategory transactionCategory = (categoryFilter != null) ? CategoryUtil.parse(categoryFilter) : null;
+
+        Category category = (categoryFilter != null)
+                ? categoryService.getCategoryForUser(categoryFilter, user)
+                : null;
 
         // Fetch all budgets
         List<Budget> budgets = budgetRepository.findBudgetsForAnalytics(
                 user.getId(),
                 startMonth,
                 endMonth,
-                transactionCategory
+                category
         );
+
         List<BudgetAnalyticsResponse> result = new ArrayList<>();
 
         for (Budget budget : budgets) {
@@ -55,26 +73,33 @@ public class BudgetAnalyticsService {
             LocalDate startDate = month.atDay(1);
             LocalDate endDate = month.atEndOfMonth();
 
-            Map<TransactionCategory, Double> expenseMap =
+            Map<Category, BigDecimal> expenseMap =
                     expenseRepository.sumExpensesByCategory(
                             user.getId(),
                             startDate,
                             endDate
                     );
 
-            double spent = expenseMap.getOrDefault(
-                    budget.getTransactionCategory(), 0.0
+            BigDecimal spent = expenseMap.getOrDefault(
+                    budget.getCategory(),
+                    BigDecimal.ZERO
             );
 
-            double budgetAmount = budget.getAmount();
-            double remaining = budgetAmount - spent;
-            double percentageUsed =
-                    budgetAmount == 0 ? 0 : (spent / budgetAmount) * 100;
+            BigDecimal budgetAmount = budget.getAmount();
+
+            BigDecimal remaining = budgetAmount.subtract(spent);
+
+            BigDecimal percentageUsed =
+                    budgetAmount.compareTo(BigDecimal.ZERO) == 0
+                            ? BigDecimal.ZERO
+                            : spent
+                            .divide(budgetAmount, 6, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100));
 
             result.add(
                     new BudgetAnalyticsResponse(
                             month,
-                            budget.getTransactionCategory(),
+                            budget.getCategory(),
                             budgetAmount,
                             spent,
                             remaining,
@@ -87,24 +112,39 @@ public class BudgetAnalyticsService {
         return result;
     }
 
-    public List<BudgetCalibrationResponse> getCalibration(int month, String categoryFilter) {
+    public List<BudgetCalibrationResponse> getCalibration(
+            int month,
+            String categoryFilter
+    ) {
 
         User user = getCurrentUser();
+
         LocalDate fromDate = LocalDate.now().minusMonths(month);
-        TransactionCategory filter = (categoryFilter != null)
-                ? CategoryUtil.parse(categoryFilter)
+
+        Category filter = (categoryFilter != null)
+                ? categoryService.getCategoryForUser(categoryFilter, user)
                 : null;
 
         // 1️⃣ Monthly totals
         List<Object[]> rows =
-                expenseRepository.avgSpendLastMonths(user.getId(), fromDate);
+                expenseRepository.avgSpendLastMonths(
+                        user.getId(),
+                        fromDate
+                );
 
         // 2️⃣ category → list of monthly totals
-        Map<TransactionCategory, List<Double>> monthlyMap = new HashMap<>();
+        Map<Category, List<BigDecimal>> monthlyMap = new HashMap<>();
 
         for (Object[] r : rows) {
-            TransactionCategory cat = (TransactionCategory) r[0];
-            Double monthlyTotal = (Double) r[3];
+
+            Category cat = (Category) r[0];
+
+            BigDecimal monthlyTotal =
+                    r[3] instanceof BigDecimal
+                            ? (BigDecimal) r[3]
+                            : BigDecimal.valueOf(
+                            ((Number) r[3]).doubleValue()
+                    );
 
             monthlyMap
                     .computeIfAbsent(cat, k -> new ArrayList<>())
@@ -112,170 +152,332 @@ public class BudgetAnalyticsService {
         }
 
         // 3️⃣ category → avg monthly spend
-        Map<TransactionCategory, Double> avgMonthlySpend = new HashMap<>();
+        Map<Category, BigDecimal> avgMonthlySpend = new HashMap<>();
+
         for (var entry : monthlyMap.entrySet()) {
+
+            BigDecimal total = entry.getValue()
+                    .stream()
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal average = entry.getValue().isEmpty()
+                    ? BigDecimal.ZERO
+                    : total.divide(
+                    BigDecimal.valueOf(entry.getValue().size()),
+                    6,
+                    RoundingMode.HALF_UP
+            );
+
             avgMonthlySpend.put(
                     entry.getKey(),
-                    entry.getValue().stream().mapToDouble(Double::doubleValue).average().orElse(0)
+                    average
             );
         }
 
         // 4️⃣ Latest budget per category (IMPORTANT)
         List<Budget> budgets =
                 budgetRepository.findLatestBudgetsPerCategory(
-                        user.getId(), filter
+                        user.getId(),
+                        filter
                 );
 
         List<BudgetCalibrationResponse> result = new ArrayList<>();
 
         for (Budget budget : budgets) {
 
-            TransactionCategory cat = budget.getTransactionCategory();
-            double avgSpend = avgMonthlySpend.getOrDefault(cat, 0.0);
-            double current = budget.getAmount();
+            Category cat = budget.getCategory();
 
-            double deviation =
-                    avgSpend == 0 ? 0 : ((current - avgSpend) / avgSpend) * 100;
+            BigDecimal avgSpend =
+                    avgMonthlySpend.getOrDefault(
+                            cat,
+                            BigDecimal.ZERO
+                    );
+
+            BigDecimal current = budget.getAmount();
+
+            BigDecimal deviation =
+                    avgSpend.compareTo(BigDecimal.ZERO) == 0
+                            ? BigDecimal.ZERO
+                            : current
+                            .subtract(avgSpend)
+                            .divide(
+                                    avgSpend,
+                                    6,
+                                    RoundingMode.HALF_UP
+                            )
+                            .multiply(BigDecimal.valueOf(100));
 
             String status;
-            if (current < avgSpend * 0.85) status = "UNDERSET";
-            else if (current > avgSpend * 1.25) status = "OVERSET";
-            else status = "WELL_CALIBRATED";
 
-            double recommended = Math.round(avgSpend * 1.10 * 100.0) / 100.0;
+            if (current.compareTo(
+                    avgSpend.multiply(BigDecimal.valueOf(0.85))
+            ) < 0) {
 
-            result.add(new BudgetCalibrationResponse(
-                    cat,
-                    current,
-                    avgSpend,
-                    recommended,
-                    status,
-                    deviation
-            ));
+                status = "UNDERSET";
+
+            } else if (current.compareTo(
+                    avgSpend.multiply(BigDecimal.valueOf(1.25))
+            ) > 0) {
+
+                status = "OVERSET";
+
+            } else {
+
+                status = "WELL_CALIBRATED";
+            }
+
+            BigDecimal recommended =
+                    avgSpend
+                            .multiply(BigDecimal.valueOf(1.10));
+
+            result.add(
+                    new BudgetCalibrationResponse(
+                            cat,
+                            current,
+                            avgSpend,
+                            round(recommended),
+                            status,
+                            round(deviation)
+                    )
+            );
         }
 
         return result;
     }
 
-    public List<BudgetDriftResponse> calDrift(YearMonth month, String category){
+    public List<BudgetDriftResponse> calDrift(
+            YearMonth month,
+            String category
+    ) {
+
         User user = getCurrentUser();
-        TransactionCategory filter = category==null ? null : CategoryUtil.parse(category);
+
+        Category filter = category == null
+                ? null
+                : categoryService.getCategoryForUser(
+                category,
+                user
+        );
 
         LocalDate recentStart = month.atDay(1);
         LocalDate recentEnd = month.atEndOfMonth();
-        System.out.println(recentStart+" "+recentEnd);
 
-        LocalDate historyStart = month.minusMonths(3).atDay(1);
-        LocalDate historyEnd = month.minusMonths(1).atEndOfMonth();
-        System.out.println(historyStart+" "+historyEnd);
-
-        Map<TransactionCategory, Double> recentSpend = expenseRepository.sumExpensesByCategory(
-                user.getId(),
-                recentStart,
-                recentEnd
+        System.out.println(
+                recentStart + " " + recentEnd
         );
 
-        Map<TransactionCategory, Double> historicalSpend = expenseRepository.sumExpensesByCategory(
-                user.getId(),
-                historyStart,
-                historyEnd
+        LocalDate historyStart =
+                month.minusMonths(3).atDay(1);
+
+        LocalDate historyEnd =
+                month.minusMonths(1).atEndOfMonth();
+
+        System.out.println(
+                historyStart + " " + historyEnd
         );
+
+        Map<Category, BigDecimal> recentSpend =
+                expenseRepository.sumExpensesByCategory(
+                        user.getId(),
+                        recentStart,
+                        recentEnd
+                );
+
+        Map<Category, BigDecimal> historicalSpend =
+                expenseRepository.sumExpensesByCategory(
+                        user.getId(),
+                        historyStart,
+                        historyEnd
+                );
 
         List<BudgetDriftResponse> result = new ArrayList<>();
-        for(TransactionCategory cat: recentSpend.keySet()){
-            if(filter!=null && cat!=filter){
+
+        for (Category cat : recentSpend.keySet()) {
+
+            if (filter != null && cat != filter) {
                 continue;
             }
 
-            double recentAvg = round(recentSpend.getOrDefault(cat, 0.0));
-            double historicalAvg = round(historicalSpend.getOrDefault(cat, 0.0) / 3.0);
+            BigDecimal recentAvg =
+                    round(
+                            recentSpend.getOrDefault(
+                                    cat,
+                                    BigDecimal.ZERO
+                            )
+                    );
 
-            double driftPercent = historicalAvg == 0 ? 0 : round(((recentAvg - historicalAvg) / historicalAvg) * 100);
+            BigDecimal historicalAvg =
+                    round(
+                            historicalSpend.getOrDefault(
+                                    cat,
+                                    BigDecimal.ZERO
+                            ).divide(
+                                    BigDecimal.valueOf(3),
+                                    6,
+                                    RoundingMode.HALF_UP
+                            )
+                    );
 
-            result.add(new BudgetDriftResponse(
-                    month,
-                    cat,
-                    determineDriftStatus(driftPercent),
-                    recentAvg,
-                    historicalAvg,
-                    driftPercent
-            ));
+            BigDecimal driftPercent =
+                    historicalAvg.compareTo(BigDecimal.ZERO) == 0
+                            ? BigDecimal.ZERO
+                            : round(
+                            recentAvg
+                                    .subtract(historicalAvg)
+                                    .divide(
+                                            historicalAvg,
+                                            6,
+                                            RoundingMode.HALF_UP
+                                    )
+                                    .multiply(
+                                            BigDecimal.valueOf(100)
+                                    )
+                    );
+
+            result.add(
+                    new BudgetDriftResponse(
+                            month,
+                            cat,
+                            determineDriftStatus(driftPercent),
+                            recentAvg,
+                            historicalAvg,
+                            driftPercent
+                    )
+            );
         }
+
         return result;
     }
 
     public BudgetFeasibilityResponse calFeasibility() {
+
         User user = getCurrentUser();
+
         YearMonth month = YearMonth.now();
 
         LocalDate start = month.atDay(1);
         LocalDate today = LocalDate.now();
         LocalDate end = month.atEndOfMonth();
 
-        int daysLeft = (int) ChronoUnit.DAYS.between(today, end) + 1;
+        int daysLeft =
+                (int) ChronoUnit.DAYS.between(today, end) + 1;
 
-        if(daysLeft<=0){
-            throw new BadRequestException("Month already ended");
+        if (daysLeft <= 0) {
+            throw new BadRequestException(
+                    "Month already ended"
+            );
         }
 
-        double totalBudget = budgetRepository.sumBudgetsForMonth(user.getId(), month);
-        double spentSoFar = expenseRepository.sumExpenses(user.getId(), start, today);
+        BigDecimal totalBudget =
+                budgetRepository.sumBudgetsForMonth(
+                        user.getId(),
+                        month
+                );
 
-        double remainingBudget = totalBudget - spentSoFar;
-        double requiredPerDay = remainingBudget<=0 ? 0 : remainingBudget / daysLeft;
+        BigDecimal spentSoFar =
+                expenseRepository.sumExpenses(
+                        user.getId(),
+                        start,
+                        today
+                );
 
-        double overallHistory =
+        BigDecimal remainingBudget =
+                totalBudget.subtract(spentSoFar);
+
+        BigDecimal requiredPerDay =
+                remainingBudget.compareTo(BigDecimal.ZERO) <= 0
+                        ? BigDecimal.ZERO
+                        : remainingBudget.divide(
+                        BigDecimal.valueOf(daysLeft),
+                        6,
+                        RoundingMode.HALF_UP
+                );
+
+        BigDecimal overallHistory =
                 expenseRepository.avgDailySpend(
                         user.getId(),
                         null,
                         LocalDate.now().minusMonths(3)
                 );
 
-        OverallFeasibility overall = new OverallFeasibility(
-                round(totalBudget),
-                round(spentSoFar),
-                round(remainingBudget),
-                daysLeft,
-                round(requiredPerDay),
-                determineFeasibility(requiredPerDay, overallHistory)
-        );
+        OverallFeasibility overall =
+                new OverallFeasibility(
+                        round(totalBudget),
+                        round(spentSoFar),
+                        round(remainingBudget),
+                        daysLeft,
+                        round(requiredPerDay),
+                        determineFeasibility(
+                                requiredPerDay,
+                                overallHistory
+                        )
+                );
 
-        Map<TransactionCategory, Double> spentByCategory = expenseRepository.sumExpensesByCategory(
-                user.getId(),
-                start,
-                today
-        );
+        Map<Category, BigDecimal> spentByCategory =
+                expenseRepository.sumExpensesByCategory(
+                        user.getId(),
+                        start,
+                        today
+                );
 
-        Map<TransactionCategory, Double> budgetByCategory =
-                budgetRepository.findByUserIdAndMonth(user.getId(), month)
+        Map<Category, BigDecimal> budgetByCategory =
+                budgetRepository.findByUserIdAndMonth(
+                                user.getId(),
+                                month
+                        )
                         .stream()
                         .collect(Collectors.toMap(
-                                Budget::getTransactionCategory,
+                                Budget::getCategory,
                                 Budget::getAmount
                         ));
 
-        List<CategoryFeasibility> categories = new ArrayList<>();
+        List<CategoryFeasibility> categories =
+                new ArrayList<>();
 
-        for(TransactionCategory cat: budgetByCategory.keySet()){
-            double catBudget = budgetByCategory.getOrDefault(cat, 0.0);
-            double catSpent = spentByCategory.getOrDefault(cat, 0.0);
+        for (Category cat : budgetByCategory.keySet()) {
 
-            double remaining = catBudget - catSpent;
-            double requiredDaily  = remaining<= 0 ? 0 : remaining / daysLeft;
+            BigDecimal catBudget =
+                    budgetByCategory.getOrDefault(
+                            cat,
+                            BigDecimal.ZERO
+                    );
 
-            double historyPerDay =
+            BigDecimal catSpent =
+                    spentByCategory.getOrDefault(
+                            cat,
+                            BigDecimal.ZERO
+                    );
+
+            BigDecimal remaining =
+                    catBudget.subtract(catSpent);
+
+            BigDecimal requiredDaily =
+                    remaining.compareTo(BigDecimal.ZERO) <= 0
+                            ? BigDecimal.ZERO
+                            : remaining.divide(
+                            BigDecimal.valueOf(daysLeft),
+                            6,
+                            RoundingMode.HALF_UP
+                    );
+
+            BigDecimal historyPerDay =
                     expenseRepository.avgDailySpend(
                             user.getId(),
                             cat,
                             LocalDate.now().minusMonths(3)
                     );
 
-            categories.add(new CategoryFeasibility(
-                    cat,
-                    round(requiredDaily),
-                    round(historyPerDay),
-                    determineFeasibility(requiredDaily, historyPerDay)
-            ));
+            categories.add(
+                    new CategoryFeasibility(
+                            cat,
+                            round(requiredDaily),
+                            round(historyPerDay),
+                            determineFeasibility(
+                                    requiredDaily,
+                                    historyPerDay
+                            )
+                    )
+            );
         }
 
         return new BudgetFeasibilityResponse(
@@ -285,52 +487,119 @@ public class BudgetAnalyticsService {
         );
     }
 
-    private double round(double val) {
-        return Math.round(val * 100.0) / 100.0;
+    private BigDecimal round(BigDecimal value) {
+
+        return value.setScale(
+                2,
+                RoundingMode.HALF_UP
+        );
     }
 
-    private String determineFeasibility(double requiredPerDay, double historyPerDay) {
+    private String determineFeasibility(
+            BigDecimal requiredPerDay,
+            BigDecimal historyPerDay
+    ) {
 
-        if (historyPerDay <= 0) return "UNKNOWN";
+        if (historyPerDay.compareTo(BigDecimal.ZERO) <= 0) {
+            return "UNKNOWN";
+        }
 
-        if (requiredPerDay <= historyPerDay * 1.1) return "SAFE";
-        if (requiredPerDay <= historyPerDay * 1.4) return "TIGHT";
+        BigDecimal safeLimit =
+                historyPerDay.multiply(
+                        BigDecimal.valueOf(1.1)
+                );
+
+        if (requiredPerDay.compareTo(safeLimit) <= 0) {
+            return "SAFE";
+        }
+
+        BigDecimal tightLimit =
+                historyPerDay.multiply(
+                        BigDecimal.valueOf(1.4)
+                );
+
+        if (requiredPerDay.compareTo(tightLimit) <= 0) {
+            return "TIGHT";
+        }
 
         return "UNLIKELY";
     }
 
-    private String determineDriftStatus(double driftPercent) {
+    private String determineDriftStatus(
+            BigDecimal driftPercent
+    ) {
 
-        double driftAbs = Math.abs(driftPercent);
-        if(driftAbs < 15){
+        BigDecimal driftAbs =
+                driftPercent.abs();
+
+        if (driftAbs.compareTo(
+                BigDecimal.valueOf(15)
+        ) < 0) {
+
             return "NONE";
-        } else if (driftAbs < 35) {
+
+        } else if (driftAbs.compareTo(
+                BigDecimal.valueOf(35)
+        ) < 0) {
+
             return "MINOR";
+
         } else {
+
             return "MAJOR";
         }
     }
 
-    private String determineStatus(double spent, double percentageUsed) {
+    private String determineStatus(
+            BigDecimal spent,
+            BigDecimal percentageUsed
+    ) {
 
-        if (spent == 0) return "NOT_STARTED";
-        if (percentageUsed < 70) return "ON_TRACK";
-        if (percentageUsed < 90) return "WARNING";
-        if (percentageUsed <= 100) return "LIMIT_REACHED";
+        if (spent.compareTo(BigDecimal.ZERO) == 0) {
+            return "NOT_STARTED";
+        }
+
+        if (percentageUsed.compareTo(
+                BigDecimal.valueOf(70)
+        ) < 0) {
+
+            return "ON_TRACK";
+        }
+
+        if (percentageUsed.compareTo(
+                BigDecimal.valueOf(90)
+        ) < 0) {
+
+            return "WARNING";
+        }
+
+        if (percentageUsed.compareTo(
+                BigDecimal.valueOf(100)
+        ) <= 0) {
+
+            return "LIMIT_REACHED";
+        }
+
         return "EXCEEDED";
     }
 
     private User getCurrentUser() {
 
         Authentication auth =
-                SecurityContextHolder.getContext().getAuthentication();
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
 
         if (auth == null || !auth.isAuthenticated()) {
-            throw new RuntimeException("Unauthenticated request");
+            throw new RuntimeException(
+                    "Unauthenticated request"
+            );
         }
 
-        return userRepository.findByEmail(auth.getPrincipal().toString())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository
+                .findByEmail(auth.getPrincipal().toString())
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
     }
 }
-

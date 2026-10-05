@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Setter
@@ -15,7 +16,7 @@ public class ExpenseRequest {
 
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be greater than 0")
-    private Double amount;
+    private BigDecimal amount;
 
     @NotBlank(message = "Category is required")
     private String category;

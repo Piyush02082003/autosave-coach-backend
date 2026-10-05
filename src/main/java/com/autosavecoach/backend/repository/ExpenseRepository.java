@@ -1,51 +1,60 @@
 package com.autosavecoach.backend.repository;
 
-import java.util.*;
-import java.time.LocalDate;
-import java.util.stream.Collectors;
-
+import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.model.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 public interface ExpenseRepository extends JpaRepository<Transaction, UUID> {
-    List<Transaction> findByUserId(UUID userId);
 
-    Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
+    List<Transaction> findByFinancialAccountUserId(UUID userId);
 
-    List<Transaction> findByUserIdAndCategoryAndDateBetween(
+    Optional<Transaction> findByIdAndFinancialAccountUserId(
+            UUID id,
+            UUID userId
+    );
+
+    List<Transaction> findByFinancialAccountUserIdAndCategoryAndTransactionDateBetween(
             UUID userId,
-            TransactionCategory transactionCategory,
+            Category category,
             LocalDate startDate,
             LocalDate endDate
     );
 
-    List<Transaction> findByUserIdAndCategory(
+    List<Transaction> findByFinancialAccountUserIdAndCategory(
             UUID userId,
-            TransactionCategory transactionCategory
+            Category category
     );
 
-    List<Transaction> findByUserIdAndDateBetween(
+    List<Transaction> findByFinancialAccountUserIdAndTransactionDateBetween(
             UUID userId,
             LocalDate startDate,
             LocalDate endDate
     );
 
     @Query("""
-        SELECT e.transactionCategory, SUM(e.amount)
-        FROM Expense e
-        WHERE e.user.id = :userId
-        AND e.date BETWEEN :startDate AND :endDate
-        GROUP BY e.transactionCategory
-    """)
+        SELECT e.category, SUM(e.amount)
+        FROM Transaction e
+        WHERE e.financialAccount.user.id = :userId
+          AND e.transactionDate BETWEEN :startDate AND :endDate
+        GROUP BY e.category
+        """)
     List<Object[]> sumExpensesRaw(
             @Param("userId") UUID userId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
 
-    default Map<TransactionCategory, Double> sumExpensesByCategory(
+    default Map<Category, BigDecimal> sumExpensesByCategory(
             UUID userId,
             LocalDate startDate,
             LocalDate endDate
@@ -53,63 +62,60 @@ public interface ExpenseRepository extends JpaRepository<Transaction, UUID> {
         return sumExpensesRaw(userId, startDate, endDate)
                 .stream()
                 .collect(Collectors.toMap(
-                        r -> (TransactionCategory) r[0],
-                        r -> (Double) r[1]
+                        r -> (Category) r[0],
+                        r -> (BigDecimal) r[1]
                 ));
     }
 
     @Query("""
-SELECT 
-    e.transactionCategory,
-    YEAR(e.date),
-    MONTH(e.date),
-    SUM(e.amount)
-FROM Expense e
-WHERE e.user.id = :userId
-  AND e.date >= :fromDate
-GROUP BY e.transactionCategory, YEAR(e.date), MONTH(e.date)
-""")
+        SELECT
+            e.category,
+            YEAR(e.transactionDate),
+            MONTH(e.transactionDate),
+            SUM(e.amount)
+        FROM Transaction e
+        WHERE e.financialAccount.user.id = :userId
+          AND e.transactionDate >= :fromDate
+        GROUP BY e.category, YEAR(e.transactionDate), MONTH(e.transactionDate)
+        """)
     List<Object[]> avgSpendLastMonths(
             @Param("userId") UUID userId,
             @Param("fromDate") LocalDate fromDate
     );
 
     @Query("""
-    SELECT COALESCE(SUM(e.amount), 0)
-    FROM Expense e
-    WHERE e.user.id = :userId
-      AND e.date BETWEEN :startDate AND :endDate
-""")
-    double sumExpenses(
+        SELECT COALESCE(SUM(e.amount), 0)
+        FROM Transaction e
+        WHERE e.financialAccount.user.id = :userId
+          AND e.transactionDate BETWEEN :startDate AND :endDate
+        """)
+    BigDecimal sumExpenses(
             @Param("userId") UUID userId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
 
     @Query("""
-    SELECT COALESCE(SUM(e.amount) / COUNT(DISTINCT e.date), 0)
-    FROM Expense e
-    WHERE e.user.id = :userId
-      AND e.transactionCategory = :transactionCategory
-      AND e.date >= :fromDate
-""")
-    double avgDailySpend(
+        SELECT COALESCE(SUM(e.amount) / COUNT(DISTINCT e.transactionDate), 0)
+        FROM Transaction e
+        WHERE e.financialAccount.user.id = :userId
+          AND e.category = :category
+          AND e.transactionDate >= :fromDate
+        """)
+    BigDecimal avgDailySpend(
             @Param("userId") UUID userId,
-            @Param("transactionCategory") TransactionCategory transactionCategory,
+            @Param("category") Category category,
             @Param("fromDate") LocalDate fromDate
     );
 
     @Query("""
-    SELECT COALESCE(SUM(e.amount) / COUNT(DISTINCT e.date), 0)
-    FROM Expense e
-    WHERE e.user.id = :userId
-      AND e.date >= :fromDate
-""")
-    double avgDailySpendOverall(
+        SELECT COALESCE(SUM(e.amount) / COUNT(DISTINCT e.transactionDate), 0)
+        FROM Transaction e
+        WHERE e.financialAccount.user.id = :userId
+          AND e.transactionDate >= :fromDate
+        """)
+    BigDecimal avgDailySpendOverall(
             @Param("userId") UUID userId,
             @Param("fromDate") LocalDate fromDate
     );
 }
-
-
-
