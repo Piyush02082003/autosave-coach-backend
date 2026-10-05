@@ -3,7 +3,6 @@ package com.autosavecoach.backend.service;
 import com.autosavecoach.backend.dto.*;
 import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.model.Budget;
-import com.autosavecoach.backend.model.TransactionCategory;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.repository.BudgetRepository;
 import com.autosavecoach.backend.repository.ExpenseRepository;

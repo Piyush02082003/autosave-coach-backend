@@ -6,7 +6,6 @@ import com.autosavecoach.backend.exception.ForbiddenException;
 import com.autosavecoach.backend.exception.InvalidMonthException;
 import com.autosavecoach.backend.exception.NotFoundException;
 import com.autosavecoach.backend.model.Budget;
-import com.autosavecoach.backend.model.TransactionCategory;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.repository.BudgetRepository;
 import com.autosavecoach.backend.repository.UserRepository;

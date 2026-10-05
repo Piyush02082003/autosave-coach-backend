@@ -1,7 +1,6 @@
 package com.autosavecoach.backend.repository;
 
 import com.autosavecoach.backend.model.Budget;
-import com.autosavecoach.backend.model.TransactionCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

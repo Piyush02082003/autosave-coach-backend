@@ -14,11 +14,11 @@ public class Budget {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @JoinColumn(name = "user_id", nullable = false)
     private UUID id;
 
-    @Enumerated(EnumType.STRING)
-    private TransactionCategory transactionCategory;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     @Column(nullable = false)
     private BigDecimal amount;
@@ -26,7 +26,7 @@ public class Budget {
     @Column(name = "budget_month")
     private YearMonth month;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

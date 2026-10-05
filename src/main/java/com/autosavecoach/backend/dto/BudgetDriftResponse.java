@@ -1,6 +1,5 @@
 package com.autosavecoach.backend.dto;
 
-import com.autosavecoach.backend.model.TransactionCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

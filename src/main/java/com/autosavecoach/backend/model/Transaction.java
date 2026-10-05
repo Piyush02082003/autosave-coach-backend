@@ -33,8 +33,9 @@ public class Transaction {
 
     private String merchantName;
 
-    @Enumerated(EnumType.STRING)
-    private TransactionCategory transactionCategory;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     private String subcategory;
 
