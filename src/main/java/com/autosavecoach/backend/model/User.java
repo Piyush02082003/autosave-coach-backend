@@ -6,11 +6,7 @@ import lombok.Data;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users",
-    uniqueConstraints = {
-            @UniqueConstraint(columnNames = "email")
-    }
-)
+@Table(name = "users", uniqueConstraints = {@UniqueConstraint(columnNames = "email")})
 @Data
 public class User {
 

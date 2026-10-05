@@ -12,7 +12,7 @@ Snapshot generated from the actual code in `src/main/java/com/autosavecoach/back
 | --- | --- | --- |
 | User | ✅ Completed | Matches: signup, login (JWT), profile GET. |
 | Expense | ✅ Completed | Matches, and then some — more read endpoints exist than the doc's original scope implied. |
-| Budget | ✅ Completed | Matches: upsert-based create, get-by-id, list with month/category filters. |
+| Budget | ✅ Completed | Matches: upsert-based create, get-by-id, list with month/transactionCategory filters. |
 | Budget Analytics | ⏳ In progress | 3 of 4 planned sub-features done (Summary, Calibration, Drift, Feasibility). **Root cause is not started.** |
 | Analytics (aggregate/trends) | ❌ Not doing | No code — consistent with doc. |
 | Simulation | ❌ Planned | No code — consistent with doc. |
@@ -38,25 +38,25 @@ So Phase 1 is 3/4 complete. The only remaining item to close out Phase 1 is **Bu
 | POST | /api/users/login | ✅ |
 | GET | /api/users | ✅ |
 
-### Expense (`/api/expenses`)
-All match the doc: `POST /`, `GET /`, `GET /{expenseId}`, `GET /total`, `GET /monthly`, `GET /category`, `GET /weekly`, `GET /range`, `GET /burn-rate`. All present in `ExpenseController`.
+### Expense (`/api/expens`)
+All match the doc: `POST /`, `GET /`, `GET /{expenseId}`, `GET /total`, `GET /monthly`, `GET /transactionCategory`, `GET /weekly`, `GET /range`, `GET /burn-rate`. All present in `ExpenseController`.
 
 ### Budget (`/api/budgets`)
 | Method | Endpoint | Status |
 | --- | --- | --- |
 | POST | /api/budgets (upsert) | ✅ |
 | GET | /api/budgets/{id} | ✅ |
-| GET | /api/budgets?month=&category= | ✅ |
+| GET | /api/budgets?month=&transactionCategory= | ✅ |
 
 ### Budget Analytics (`/api/budgets/analytics/*`)
-**Note: the actual route shape differs from the design doc.** The doc describes `GET /api/budgets/compare/{user_id}&category&rangeDate`; the real implementation nests everything under `/api/budgets/analytics/*` and derives the user from the JWT (no `user_id` in the path — auth already scopes it). Treat the doc's endpoint spellings as stale; the table below is the source of truth.
+**Note: the actual route shape differs from the design doc.** The doc describes `GET /api/budgets/compare/{user_id}&transactionCategory&rangeDate`; the real implementation nests everything under `/api/budgets/analytics/*` and derives the user from the JWT (no `user_id` in the path — auth already scopes it). Treat the doc's endpoint spellings as stale; the table below is the source of truth.
 
 | Method | Endpoint | Purpose | Status |
 | --- | --- | --- | --- |
-| GET | /api/budgets/analytics/summary?startMonth&endMonth&category | Budget vs. spend per month/category, with status (`NOT_STARTED` / `ON_TRACK` / `WARNING` / `LIMIT_REACHED` / `EXCEEDED`) | ✅ |
-| GET | /api/budgets/analytics/calibration?month&category | Is the budget set correctly vs. historical average spend (`UNDERSET` / `OVERSET` / `WELL_CALIBRATED`) + recommended amount | ✅ |
-| GET | /api/budgets/analytics/drift?month&category | Recent (1mo) vs. historical (prior 3mo avg) spend change (`NONE` / `MINOR` / `MAJOR`) | ✅ |
-| GET | /api/budgets/analytics/feasibility | Can the user finish the month within budget, overall + per-category, using required-daily-spend vs. historical daily average (`SAFE` / `TIGHT` / `UNLIKELY` / `UNKNOWN`) | ✅ |
+| GET | /api/budgets/analytics/summary?startMonth&endMonth&transactionCategory | Budget vs. spend per month/transactionCategory, with status (`NOT_STARTED` / `ON_TRACK` / `WARNING` / `LIMIT_REACHED` / `EXCEEDED`) | ✅ |
+| GET | /api/budgets/analytics/calibration?month&transactionCategory | Is the budget set correctly vs. historical average spend (`UNDERSET` / `OVERSET` / `WELL_CALIBRATED`) + recommended amount | ✅ |
+| GET | /api/budgets/analytics/drift?month&transactionCategory | Recent (1mo) vs. historical (prior 3mo avg) spend change (`NONE` / `MINOR` / `MAJOR`) | ✅ |
+| GET | /api/budgets/analytics/feasibility | Can the user finish the month within budget, overall + per-transactionCategory, using required-daily-spend vs. historical daily average (`SAFE` / `TIGHT` / `UNLIKELY` / `UNKNOWN`) | ✅ |
 | — | Budget failure root cause | Why a budget failed (which categories/days drove it) | ❌ not started |
 
 ---
@@ -76,4 +76,4 @@ No code yet for any of this — matches the doc's "Planned" status. Nothing to r
 
 ## Suggested next step
 
-Build **Budget Failure Root Cause** (`/api/budgets/analytics/root-cause` or similar) — it's the last gap in Phase 1 and the doc explicitly calls out Budget Analytics as the core of the project. Natural inputs: reuse the per-category spend maps already built in `BudgetAnalyticsService` (`sumExpensesByCategory`) plus daily expense breakdown to identify which category/week drove a budget over its limit, following the same pattern as `calDrift`/`calFeasibility`.
+Build **Budget Failure Root Cause** (`/api/budgets/analytics/root-cause` or similar) — it's the last gap in Phase 1 and the doc explicitly calls out Budget Analytics as the core of the project. Natural inputs: reuse the per-transactionCategory spend maps already built in `BudgetAnalyticsService` (`sumExpensesByCategory`) plus daily transaction breakdown to identify which transactionCategory/week drove a budget over its limit, following the same pattern as `calDrift`/`calFeasibility`.

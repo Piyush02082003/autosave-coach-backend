@@ -3,13 +3,12 @@ package com.autosavecoach.backend.service;
 import com.autosavecoach.backend.dto.*;
 import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.model.Budget;
-import com.autosavecoach.backend.model.Category;
+import com.autosavecoach.backend.model.TransactionCategory;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.repository.BudgetRepository;
 import com.autosavecoach.backend.repository.ExpenseRepository;
 import com.autosavecoach.backend.repository.UserRepository;
 import com.autosavecoach.backend.util.CategoryUtil;
-import org.springframework.cglib.core.Local;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -40,14 +39,14 @@ public class BudgetAnalyticsService {
 
         User user = getCurrentUser();
         System.out.println(user);
-        Category category = (categoryFilter != null) ? CategoryUtil.parse(categoryFilter) : null;
+        TransactionCategory transactionCategory = (categoryFilter != null) ? CategoryUtil.parse(categoryFilter) : null;
 
         // Fetch all budgets
         List<Budget> budgets = budgetRepository.findBudgetsForAnalytics(
                 user.getId(),
                 startMonth,
                 endMonth,
-                category
+                transactionCategory
         );
         List<BudgetAnalyticsResponse> result = new ArrayList<>();
 
@@ -57,7 +56,7 @@ public class BudgetAnalyticsService {
             LocalDate startDate = month.atDay(1);
             LocalDate endDate = month.atEndOfMonth();
 
-            Map<Category, Double> expenseMap =
+            Map<TransactionCategory, Double> expenseMap =
                     expenseRepository.sumExpensesByCategory(
                             user.getId(),
                             startDate,
@@ -65,7 +64,7 @@ public class BudgetAnalyticsService {
                     );
 
             double spent = expenseMap.getOrDefault(
-                    budget.getCategory(), 0.0
+                    budget.getTransactionCategory(), 0.0
             );
 
             double budgetAmount = budget.getAmount();
@@ -76,7 +75,7 @@ public class BudgetAnalyticsService {
             result.add(
                     new BudgetAnalyticsResponse(
                             month,
-                            budget.getCategory(),
+                            budget.getTransactionCategory(),
                             budgetAmount,
                             spent,
                             remaining,
@@ -93,7 +92,7 @@ public class BudgetAnalyticsService {
 
         User user = getCurrentUser();
         LocalDate fromDate = LocalDate.now().minusMonths(month);
-        Category filter = (categoryFilter != null)
+        TransactionCategory filter = (categoryFilter != null)
                 ? CategoryUtil.parse(categoryFilter)
                 : null;
 
@@ -102,10 +101,10 @@ public class BudgetAnalyticsService {
                 expenseRepository.avgSpendLastMonths(user.getId(), fromDate);
 
         // 2️⃣ category → list of monthly totals
-        Map<Category, List<Double>> monthlyMap = new HashMap<>();
+        Map<TransactionCategory, List<Double>> monthlyMap = new HashMap<>();
 
         for (Object[] r : rows) {
-            Category cat = (Category) r[0];
+            TransactionCategory cat = (TransactionCategory) r[0];
             Double monthlyTotal = (Double) r[3];
 
             monthlyMap
@@ -114,7 +113,7 @@ public class BudgetAnalyticsService {
         }
 
         // 3️⃣ category → avg monthly spend
-        Map<Category, Double> avgMonthlySpend = new HashMap<>();
+        Map<TransactionCategory, Double> avgMonthlySpend = new HashMap<>();
         for (var entry : monthlyMap.entrySet()) {
             avgMonthlySpend.put(
                     entry.getKey(),
@@ -132,7 +131,7 @@ public class BudgetAnalyticsService {
 
         for (Budget budget : budgets) {
 
-            Category cat = budget.getCategory();
+            TransactionCategory cat = budget.getTransactionCategory();
             double avgSpend = avgMonthlySpend.getOrDefault(cat, 0.0);
             double current = budget.getAmount();
 
@@ -161,7 +160,7 @@ public class BudgetAnalyticsService {
 
     public List<BudgetDriftResponse> calDrift(YearMonth month, String category){
         User user = getCurrentUser();
-        Category filter = category==null ? null : CategoryUtil.parse(category);
+        TransactionCategory filter = category==null ? null : CategoryUtil.parse(category);
 
         LocalDate recentStart = month.atDay(1);
         LocalDate recentEnd = month.atEndOfMonth();
@@ -171,20 +170,20 @@ public class BudgetAnalyticsService {
         LocalDate historyEnd = month.minusMonths(1).atEndOfMonth();
         System.out.println(historyStart+" "+historyEnd);
 
-        Map<Category, Double> recentSpend = expenseRepository.sumExpensesByCategory(
+        Map<TransactionCategory, Double> recentSpend = expenseRepository.sumExpensesByCategory(
                 user.getId(),
                 recentStart,
                 recentEnd
         );
 
-        Map<Category, Double> historicalSpend = expenseRepository.sumExpensesByCategory(
+        Map<TransactionCategory, Double> historicalSpend = expenseRepository.sumExpensesByCategory(
                 user.getId(),
                 historyStart,
                 historyEnd
         );
 
         List<BudgetDriftResponse> result = new ArrayList<>();
-        for(Category cat: recentSpend.keySet()){
+        for(TransactionCategory cat: recentSpend.keySet()){
             if(filter!=null && cat!=filter){
                 continue;
             }
@@ -242,23 +241,23 @@ public class BudgetAnalyticsService {
                 determineFeasibility(requiredPerDay, overallHistory)
         );
 
-        Map<Category, Double> spentByCategory = expenseRepository.sumExpensesByCategory(
+        Map<TransactionCategory, Double> spentByCategory = expenseRepository.sumExpensesByCategory(
                 user.getId(),
                 start,
                 today
         );
 
-        Map<Category, Double> budgetByCategory =
+        Map<TransactionCategory, Double> budgetByCategory =
                 budgetRepository.findByUserIdAndMonth(user.getId(), month)
                         .stream()
                         .collect(Collectors.toMap(
-                                Budget::getCategory,
+                                Budget::getTransactionCategory,
                                 Budget::getAmount
                         ));
 
         List<CategoryFeasibility> categories = new ArrayList<>();
 
-        for(Category cat: budgetByCategory.keySet()){
+        for(TransactionCategory cat: budgetByCategory.keySet()){
             double catBudget = budgetByCategory.getOrDefault(cat, 0.0);
             double catSpent = spentByCategory.getOrDefault(cat, 0.0);
 

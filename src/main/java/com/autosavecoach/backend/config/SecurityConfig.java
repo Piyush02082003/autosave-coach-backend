@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 "/api/users",
                                 "/api/users/login",
                                 "/h2/**",
-                                "/api/health"
+                                "/api/health",
+                                "api/setu/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

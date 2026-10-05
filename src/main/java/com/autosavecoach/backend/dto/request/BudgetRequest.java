@@ -4,6 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Setter
 @Getter
 public class BudgetRequest {
@@ -13,7 +15,7 @@ public class BudgetRequest {
 
     @NotNull(message = "Amount is required")
     @Positive(message = "Budget amount must be greater than 0")
-    private Double amount;
+    private BigDecimal amount;
 
     @NotBlank(message = "Month is required (YYYY-MM)")
     @Pattern(

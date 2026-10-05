@@ -6,7 +6,6 @@ import com.autosavecoach.backend.dto.BudgetDriftResponse;
 import com.autosavecoach.backend.dto.BudgetFeasibilityResponse;
 import com.autosavecoach.backend.exception.BadRequestException;
 import com.autosavecoach.backend.exception.InvalidMonthException;
-import com.autosavecoach.backend.model.Category;
 import com.autosavecoach.backend.service.BudgetAnalyticsService;
 import org.springframework.web.bind.annotation.*;
 

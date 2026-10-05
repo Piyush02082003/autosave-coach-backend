@@ -1,6 +1,6 @@
 package com.autosavecoach.backend.dto;
 
-import com.autosavecoach.backend.model.Category;
+import com.autosavecoach.backend.model.TransactionCategory;
 import lombok.Getter;
 
 import java.time.YearMonth;
@@ -9,7 +9,7 @@ import java.time.YearMonth;
 public class BudgetAnalyticsResponse {
 
     private YearMonth month;
-    private Category category;
+    private TransactionCategory transactionCategory;
     private double budget;
     private double spent;
     private double remaining;
@@ -18,7 +18,7 @@ public class BudgetAnalyticsResponse {
 
     public BudgetAnalyticsResponse(
             YearMonth month,
-            Category category,
+            TransactionCategory transactionCategory,
             double budget,
             double spent,
             double remaining,
@@ -26,7 +26,7 @@ public class BudgetAnalyticsResponse {
             String status
     ) {
         this.month = month;
-        this.category = category;
+        this.transactionCategory = transactionCategory;
         this.budget = budget;
         this.spent = spent;
         this.remaining = remaining;

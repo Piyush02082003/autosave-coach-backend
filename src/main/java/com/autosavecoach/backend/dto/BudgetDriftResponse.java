@@ -1,6 +1,6 @@
 package com.autosavecoach.backend.dto;
 
-import com.autosavecoach.backend.model.Category;
+import com.autosavecoach.backend.model.TransactionCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -10,7 +10,7 @@ import java.time.YearMonth;
 @AllArgsConstructor
 public class BudgetDriftResponse {
     private YearMonth month;
-    private Category category;
+    private TransactionCategory transactionCategory;
     private String driftLevel;
     private double recentAvgSpend;
     private double historicalAvgSpend;

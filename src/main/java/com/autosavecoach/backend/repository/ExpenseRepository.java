@@ -4,41 +4,41 @@ import java.util.*;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
 
-import com.autosavecoach.backend.model.Category;
-import com.autosavecoach.backend.model.Expense;
+import com.autosavecoach.backend.model.Transaction;
+import com.autosavecoach.backend.model.TransactionCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
-    List<Expense> findByUserId(UUID userId);
+public interface ExpenseRepository extends JpaRepository<Transaction, UUID> {
+    List<Transaction> findByUserId(UUID userId);
 
-    Optional<Expense> findByIdAndUserId(UUID id, UUID userId);
+    Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 
-    List<Expense> findByUserIdAndCategoryAndDateBetween(
+    List<Transaction> findByUserIdAndCategoryAndDateBetween(
             UUID userId,
-            Category category,
+            TransactionCategory transactionCategory,
             LocalDate startDate,
             LocalDate endDate
     );
 
-    List<Expense> findByUserIdAndCategory(
+    List<Transaction> findByUserIdAndCategory(
             UUID userId,
-            Category category
+            TransactionCategory transactionCategory
     );
 
-    List<Expense> findByUserIdAndDateBetween(
+    List<Transaction> findByUserIdAndDateBetween(
             UUID userId,
             LocalDate startDate,
             LocalDate endDate
     );
 
     @Query("""
-        SELECT e.category, SUM(e.amount)
+        SELECT e.transactionCategory, SUM(e.amount)
         FROM Expense e
         WHERE e.user.id = :userId
         AND e.date BETWEEN :startDate AND :endDate
-        GROUP BY e.category
+        GROUP BY e.transactionCategory
     """)
     List<Object[]> sumExpensesRaw(
             @Param("userId") UUID userId,
@@ -46,7 +46,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             @Param("endDate") LocalDate endDate
     );
 
-    default Map<Category, Double> sumExpensesByCategory(
+    default Map<TransactionCategory, Double> sumExpensesByCategory(
             UUID userId,
             LocalDate startDate,
             LocalDate endDate
@@ -54,21 +54,21 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
         return sumExpensesRaw(userId, startDate, endDate)
                 .stream()
                 .collect(Collectors.toMap(
-                        r -> (Category) r[0],
+                        r -> (TransactionCategory) r[0],
                         r -> (Double) r[1]
                 ));
     }
 
     @Query("""
 SELECT 
-    e.category,
+    e.transactionCategory,
     YEAR(e.date),
     MONTH(e.date),
     SUM(e.amount)
 FROM Expense e
 WHERE e.user.id = :userId
   AND e.date >= :fromDate
-GROUP BY e.category, YEAR(e.date), MONTH(e.date)
+GROUP BY e.transactionCategory, YEAR(e.date), MONTH(e.date)
 """)
     List<Object[]> avgSpendLastMonths(
             @Param("userId") UUID userId,
@@ -91,12 +91,12 @@ GROUP BY e.category, YEAR(e.date), MONTH(e.date)
     SELECT COALESCE(SUM(e.amount) / COUNT(DISTINCT e.date), 0)
     FROM Expense e
     WHERE e.user.id = :userId
-      AND e.category = :category
+      AND e.transactionCategory = :transactionCategory
       AND e.date >= :fromDate
 """)
     double avgDailySpend(
             @Param("userId") UUID userId,
-            @Param("category") Category category,
+            @Param("transactionCategory") TransactionCategory transactionCategory,
             @Param("fromDate") LocalDate fromDate
     );
 

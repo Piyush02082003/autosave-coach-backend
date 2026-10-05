@@ -2,6 +2,8 @@ package com.autosavecoach.backend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -12,12 +14,14 @@ public class Budget {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @JoinColumn(name = "user_id", nullable = false)
     private UUID id;
 
     @Enumerated(EnumType.STRING)
-    private Category category;
+    private TransactionCategory transactionCategory;
 
-    private Double amount;
+    @Column(nullable = false)
+    private BigDecimal amount;
 
     @Column(name = "budget_month")
     private YearMonth month;

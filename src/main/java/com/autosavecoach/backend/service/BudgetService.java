@@ -6,7 +6,7 @@ import com.autosavecoach.backend.exception.ForbiddenException;
 import com.autosavecoach.backend.exception.InvalidMonthException;
 import com.autosavecoach.backend.exception.NotFoundException;
 import com.autosavecoach.backend.model.Budget;
-import com.autosavecoach.backend.model.Category;
+import com.autosavecoach.backend.model.TransactionCategory;
 import com.autosavecoach.backend.model.User;
 import com.autosavecoach.backend.repository.BudgetRepository;
 import com.autosavecoach.backend.repository.UserRepository;
@@ -35,19 +35,19 @@ public class BudgetService {
     public BudgetResponse setBudget(BudgetRequest request) {
 
         User user = getCurrentUser();
-        Category category = CategoryUtil.parse(request.getCategory());
+        TransactionCategory transactionCategory = CategoryUtil.parse(request.getCategory());
         YearMonth month = YearMonth.parse(request.getMonth());
 
         validateMonth(month);
 
         Budget budget = budgetRepository.findByUserIdAndCategoryAndMonth(
                 user.getId(),
-                category,
+                transactionCategory,
                 month
         ).orElseGet(() -> {
             Budget b = new Budget();
             b.setUser(user);
-            b.setCategory(category);
+            b.setTransactionCategory(transactionCategory);
             b.setMonth(month);
             return b;
         });
@@ -90,17 +90,17 @@ public class BudgetService {
             }
         }
 
-        Category parsedCategory = null;
+        TransactionCategory parsedTransactionCategory = null;
         if (category != null) {
-            parsedCategory = CategoryUtil.parse(category);
+            parsedTransactionCategory = CategoryUtil.parse(category);
         }
 
         List<Budget> budgets;
 
-        if (parsedMonth != null && parsedCategory != null) {
+        if (parsedMonth != null && parsedTransactionCategory != null) {
             budgets = budgetRepository.findByUserIdAndCategoryAndMonth(
                     user.getId(),
-                    parsedCategory,
+                    parsedTransactionCategory,
                     parsedMonth
             ).map(List::of).orElse(List.of());
         }
@@ -110,10 +110,10 @@ public class BudgetService {
                     parsedMonth
             );
         }
-        else if (parsedCategory != null) {
+        else if (parsedTransactionCategory != null) {
             budgets = budgetRepository.findByUserIdAndCategory(
                     user.getId(),
-                    parsedCategory
+                    parsedTransactionCategory
             );
         }
         else {
@@ -152,7 +152,7 @@ public class BudgetService {
     private BudgetResponse mapToResponse(Budget budget) {
         return new BudgetResponse(
                 budget.getId(),
-                budget.getCategory().name(),
+                budget.getTransactionCategory().name(),
                 budget.getAmount(),
                 budget.getMonth().toString()
         );

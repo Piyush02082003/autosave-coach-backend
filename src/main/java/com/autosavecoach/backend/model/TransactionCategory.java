@@ -1,7 +1,8 @@
 package com.autosavecoach.backend.model;
 
-public enum Category {
-    FOOD,
+public enum TransactionCategory {
+    FOOD_DINING,
+    GROCERIES,
     RENT,
     TRANSPORT,
     SHOPPING,
@@ -9,5 +10,8 @@ public enum Category {
     HEALTH,
     EDUCATION,
     UTILITIES,
+    INVESTMENT,
+    TRANSFER,
+    CASH_WITHDRAWAL,
     OTHER
 }

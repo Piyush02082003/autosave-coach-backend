@@ -48,9 +48,9 @@ Key point: we never see bank credentials. We only ever talk to Setu's APIs and r
 
 ## 3. Where this fits in the current architecture
 
-Current domain: `User` → `Expense` (manually entered, has `title`, `category`, `amount`, `date`). Budget analytics is built entirely on `Expense`.
+Current domain: `User` → `Expense` (manually entered, has `title`, `transactionCategory`, `amount`, `date`). Budget analytics is built entirely on `Expense`.
 
-Proposed approach: **don't bolt transactions onto `Expense` directly.** Bank transactions are a different shape (raw narration, no user-assigned category, need dedup, need a link back to the source account/consent). Introduce a parallel domain and reconcile into `Expense` via a mapping step:
+Proposed approach: **don't bolt transactions onto `Expense` directly.** Bank transactions are a different shape (raw narration, no user-assigned transactionCategory, need dedup, need a link back to the source account/consent). Introduce a parallel domain and reconcile into `Expense` via a mapping step:
 
 ```
 com.autosavecoach.backend.integration.setu/
@@ -99,9 +99,9 @@ Setu's FI data schema (per account) returns transactions roughly as:
 | `narration` | `Expense.title` (raw bank description, e.g. `"UPI/SWIGGY/..."`) |
 | `type` (CREDIT/DEBIT) | filter — only sync `DEBIT` into `Expense`; store `CREDIT` rows in `SyncedTransaction` only, useful later for income/savings-rate features but out of scope now |
 | `mode` (UPI/NEFT/CARD/...) | stored on `SyncedTransaction`, not currently used by `Expense` |
-| — (no category from bank) | `Expense.category` must be inferred — see below |
+| — (no transactionCategory from bank) | `Expense.transactionCategory` must be inferred — see below |
 
-**Category inference is the real gap.** Setu gives no category. Options, roughly in order of effort:
+**Category inference is the real gap.** Setu gives no transactionCategory. Options, roughly in order of effort:
 1. Keyword/merchant-pattern matching on `narration` (cheap, works for common merchants — Swiggy/Zomato → FOOD, Uber/Ola → TRANSPORT, etc.) as a first pass.
 2. Fall back to `OTHER` and let the user re-categorize in the UI, feeding corrections back into the keyword table.
 3. (Later) small classifier if manual corrections accumulate enough signal.
